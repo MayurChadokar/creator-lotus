@@ -1,0 +1,14 @@
+node_modules
+.netlify
+.tools
+.npm-cache
+.env
+.env.*
+!.env.example
+dist
+.next
+out
+*.log
+*.png
+*.zip
+tsconfig.tsbuildinfo

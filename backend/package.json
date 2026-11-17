@@ -1,0 +1,48 @@
+{
+  "name": "influencer-platform-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "db:setup": "tsx src/dbSetup.ts",
+    "jobs": "tsx src/runJobs.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "exceljs": "^4.4.0",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.3",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "otpauth": "^9.6.0",
+    "mysql2": "^3.15.3",
+    "qrcode": "^1.5.4",
+    "serverless-http": "^4.0.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.6.6",
+    "@types/qrcode": "^1.5.6",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "overrides": {
+    "uuid": "^11.1.1",
+    "minimatch": "^11.0.1"
+  }
+}
