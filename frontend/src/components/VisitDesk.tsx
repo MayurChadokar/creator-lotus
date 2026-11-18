@@ -30,8 +30,8 @@ export function VisitDesk({ base, storeId }: { base: string; storeId: string | n
                     <Button kind="danger" onClick={() => setAct({ row: r, approve: false })}>Decline</Button>
                   </>}
                   {r.status === 'APPROVED' && started(r) && <>
-                    <Button busy={busy} onClick={() => run(async () => { await api(`${base}/visits/${r.id}/outcome`, 'POST', { outcome: 'COMPLETED' }); await list.reload(); })}>Visited</Button>
-                    <Button busy={busy} onClick={() => run(async () => { await api(`${base}/visits/${r.id}/outcome`, 'POST', { outcome: 'NO_SHOW' }); await list.reload(); })}>No-show</Button>
+                    <Button busy={busy} onClick={() => run(async () => { await api(`${base}/visits/${r.id}/outcome`, 'POST', { outcome: 'COMPLETED' }); await list.reload(); }, 'Visit marked as completed')}>Visited</Button>
+                    <Button busy={busy} onClick={() => run(async () => { await api(`${base}/visits/${r.id}/outcome`, 'POST', { outcome: 'NO_SHOW' }); await list.reload(); }, 'Visit marked as no-show')}>No-show</Button>
                   </>}
                 </div>
               ) },

@@ -64,6 +64,11 @@ body { background: theme('colors.paper'); color: theme('colors.ink'); font-varia
 .creator-portal aside nav a:not([aria-current='page']), .creator-portal aside > div:last-child button { color: #eaf8f7; }
 .creator-portal aside nav a[aria-current='page'] { color: #174d4d; }
 .creator-portal aside nav > p, .creator-portal aside > div:last-child > p, .creator-portal aside > div:first-child > div:nth-of-type(2) { color: #cbeae7; }
+.creator-sidebar nav a { min-height: 44px; border-radius: 7px; letter-spacing: .005em; }
+.creator-sidebar nav a svg { opacity: .9; }
+.creator-sidebar nav a[aria-current='page'] { font-weight: 600; }
+.creator-sidebar nav a[aria-current='page'] svg { opacity: 1; }
+.creator-sidebar > div:last-child button { min-height: 42px; }
 
 .ops-card { border: 1px solid #dfe6ee; border-radius: 14px; background: white; box-shadow: 0 1px 2px rgb(15 35 64 / .04); }
 .ops-kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }

@@ -1,5 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 // ---- Buttons ----
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { kind?: 'primary' | 'plain' | 'danger'; busy?: boolean };
@@ -111,16 +112,18 @@ export function Table<T>({ cols, rows, rowKey, empty }: { cols: Col<T>[]; rows: 
 // ---- Toast messages ----
 type Toast = { text: string; bad?: boolean } | null;
 const ToastCtx = createContext<(text: string, bad?: boolean) => void>(() => {});
+const ToastVersionCtx = createContext<{ current: number } | null>(null);
 export const useToast = () => useContext(ToastCtx);
 export function ToastHost({ children }: { children: ReactNode }) {
   const [t, setT] = useState<Toast>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const version = useRef(0);
   const show = (text: string, bad?: boolean) => {
-    setT({ text, bad }); clearTimeout(timer.current);
+    version.current++; setT({ text, bad }); clearTimeout(timer.current);
     timer.current = setTimeout(() => setT(null), bad ? 8000 : 4000);
   };
   return (
-    <ToastCtx.Provider value={show}>
+    <ToastCtx.Provider value={show}><ToastVersionCtx.Provider value={version}>
       {children}
       <div aria-live="polite" className="pointer-events-none fixed bottom-20 left-4 right-4 z-[60] md:bottom-6 md:left-auto md:w-96">
         {t && <div role={t.bad ? 'alert' : 'status'} className={`pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm font-medium shadow-lg ${t.bad ? 'border-[#f2c6c2] bg-[#fff5f4] text-[#9c2d24]' : 'border-[#a9d9c0] bg-[#ecf9f1] text-[#176342]'}`}>
@@ -128,7 +131,7 @@ export function ToastHost({ children }: { children: ReactNode }) {
           <span>{t.text}</span>
         </div>}
       </div>
-    </ToastCtx.Provider>
+    </ToastVersionCtx.Provider></ToastCtx.Provider>
   );
 }
 /** Runs an action, reporting success or the server's explanation. */
@@ -230,6 +233,10 @@ export function FormModal({ title, intro, fields, submit, danger, onSubmit, onCl
   const [values, setValues] = useState<Record<string, any>>(() => initialValues(fields));
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const pathname = usePathname();
+  const staffFeedback = pathname === '/admin' || pathname.startsWith('/admin/') || pathname === '/manager' || pathname.startsWith('/manager/');
+  const toast = useToast();
+  const toastVersion = useContext(ToastVersionCtx);
   const tabOf = (f: Field) => f.tab ?? firstTab;
   const tabs = [...new Set(fields.map(tabOf))];
   const [tab, setTab] = useState(tabs[0]!);
@@ -239,9 +246,10 @@ export function FormModal({ title, intro, fields, submit, danger, onSubmit, onCl
         e.preventDefault(); setErr(null);
         // Fields on a hidden tab are not checked by the browser, so check them here.
         const empty = fields.find((f) => f.required && (!f.show || f.show(values)) && (values[f.name] === '' || values[f.name] === undefined || (f.type === 'checkbox' && !values[f.name])));
-        if (empty) { setTab(tabOf(empty)); setErr(`${empty.type === 'checkbox' ? 'Please tick: ' : 'Please fill in '}${empty.label}${tabs.length > 1 ? ` on the ${tabOf(empty)} tab` : ''}.`); return; }
+        if (empty) { const message = `${empty.type === 'checkbox' ? 'Please tick: ' : 'Please fill in '}${empty.label}${tabs.length > 1 ? ` on the ${tabOf(empty)} tab` : ''}.`; setTab(tabOf(empty)); setErr(message); if (staffFeedback) toast(message, true); return; }
         setBusy(true);
-        try { await onSubmit(values); onClose(); } catch (x) { setErr((x as Error).message); setBusy(false); }
+        const previousToast = toastVersion?.current;
+        try { await onSubmit(values); if (staffFeedback && toastVersion?.current === previousToast) toast('Action completed successfully.'); onClose(); } catch (x) { const message = (x as Error).message; setErr(message); if (staffFeedback) toast(message, true); setBusy(false); }
       }}>
         {intro && <div className="mb-4 text-sm text-muted">{intro}</div>}
         {tabs.length > 1 && (
