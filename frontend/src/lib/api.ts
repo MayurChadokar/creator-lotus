@@ -89,4 +89,6 @@ export const count = (n: number | null | undefined) => (n === null || n === unde
 export const percent = (bps: number | null | undefined) => (bps === null || bps === undefined ? '-' : `${(bps / 100).toFixed(2)}%`);
 export const date = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : '-';
-export const toIso = (local: string) => new Date(local).toISOString();
+// Date and time fields in the portal are entered in India time, irrespective of the browser's timezone.
+export const toIso = (local: string) => new Date(`${local}+05:30`).toISOString();
+export const dateTimeIst = (d: string) => `${new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' })} IST`;

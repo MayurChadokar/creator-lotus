@@ -216,6 +216,7 @@ export function Fields({ fields, values, set }: { fields: Field[]; values: Recor
           <div key={f.name}>{label}
             <input id={id} type={htmlType} className={inputCls} required={f.required} value={v ?? ''} min={f.min ?? (f.type === 'rupees' ? 0 : undefined)} max={f.max}
               step={f.step ?? (f.type === 'rupees' ? '0.01' : undefined)} placeholder={f.placeholder} onChange={(e) => set(f.name, e.target.value)} />{hint}
+            {f.type === 'datetime' && <p className="mt-1 text-xs text-muted">Time is in IST (India Standard Time).</p>}
           </div>
         );
       })(f)}</div>)}

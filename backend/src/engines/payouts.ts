@@ -44,7 +44,7 @@ async function addItem(c: Db, batchId: string, e: any, today: string): Promise<v
   const { rows: [tax] } = await c.query(`SELECT pan_status, pan_encrypted FROM tax_records WHERE influencer_id=$1`, [e.influencer_id]);
   const panOperative = !!tax && tax.pan_status !== 'INOPERATIVE';
   const { tdsPaise, rateBps } = computeTds({
-    grossPaise: e.gross_paise, priorGrossThisYearPaise: prior.g, priorTdsThisYearPaise: prior.t, panOperative, rule: ruleTerms(rule),
+    grossPaise: e.gross_paise, priorGrossThisYearPaise: Number(prior.g), priorTdsThisYearPaise: Number(prior.t), panOperative, rule: ruleTerms(rule),
   });
   const { rows: benefits } = await c.query(
     `SELECT id, tds_paise - recovered_paise AS open FROM benefit_records
@@ -192,7 +192,7 @@ export async function bankPaymentLines(batchId: string, actorId: string, reExpor
       WHERE i.batch_id=$1 AND i.status='PROCESSING' AND i.net_paise > 0 AND ($2::boolean OR i.exported_at IS NULL) ORDER BY a.account_holder`, [batchId, !!reExportReason]);
   const included = rows.filter((r) => !unverified.has(r.id) && r.verified_at);
   // A line goes on one file only, unless someone gives a reason, so a repeat upload cannot pay twice by accident.
-  await pool.query(`UPDATE payment_batch_items SET exported_at=now() WHERE id = ANY($1::uuid[])`, [included.map((r) => r.id)]);
+  if (included.length) await pool.query(`UPDATE payment_batch_items SET exported_at=now() WHERE id = ANY($1::uuid[])`, [included.map((r) => r.id)]);
   await audit(pool, actorId, reExportReason ? 'BANK_FILE_RE_EXPORTED' : 'BANK_FILE_DOWNLOADED', 'payment_batch', batchId, reExportReason, { lines: included.length });
   return {
     skipped: rows.filter((r) => unverified.has(r.id) || !r.verified_at).length,

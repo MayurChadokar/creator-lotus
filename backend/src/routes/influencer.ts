@@ -88,7 +88,7 @@ export function influencerRoutes() {
   });
 
   r.get('/social/instagram/connect-url', (req, res) => {
-    if (!process.env.INSTAGRAM_APP_ID) throw new AppError(503, 'NOT_READY', 'Instagram connection is waiting for Meta approval. Please use YouTube for now.');
+    if (!process.env.INSTAGRAM_APP_ID || !process.env.INSTAGRAM_APP_SECRET || !process.env.INSTAGRAM_REDIRECT_URI) throw new AppError(503, 'NOT_READY', 'Instagram connection is not configured yet. Please contact support.');
     const state = jwt.sign({ uid: req.user.id, purpose: 'ig' }, env('JWT_SECRET'), { expiresIn: '15m' });
     res.json({ url: instagramAuthorizeUrl(state) });
   });
@@ -98,12 +98,23 @@ export function influencerRoutes() {
     try { st = jwt.verify(b.state, env('JWT_SECRET')) as typeof st; } catch { throw new AppError(400, 'BAD_STATE', 'Please start connecting again'); }
     if (st.uid !== req.user.id || st.purpose !== 'ig') throw forbidden();
     const a = await connectInstagram(b.code);
-    await pool.query(
-      `INSERT INTO social_accounts (influencer_id, platform, external_id, handle, followers, access_token_enc, token_expires_at)
-       VALUES ($1,'INSTAGRAM',$2,$3,$4,$5, now()+make_interval(secs => $6))
-       ON CONFLICT (influencer_id, platform) DO UPDATE SET external_id=EXCLUDED.external_id, handle=EXCLUDED.handle, followers=EXCLUDED.followers,
-         access_token_enc=EXCLUDED.access_token_enc, token_expires_at=EXCLUDED.token_expires_at, connected_at=now()`,
-      [req.user.id, a.externalId, a.handle, a.followers, encrypt(a.token), a.expiresInSeconds]);
+    try {
+      await withTx(async (c) => {
+        await c.query(`SELECT id FROM users WHERE id=$1 FOR UPDATE`, [req.user.id]);
+        const existing = await c.query(`SELECT id FROM social_accounts WHERE influencer_id=$1 AND platform='INSTAGRAM'`, [req.user.id]);
+        const values = [req.user.id, a.externalId, a.handle, a.followers, encrypt(a.token), a.expiresInSeconds];
+        if (existing.rowCount) {
+          await c.query(`UPDATE social_accounts SET external_id=$2, handle=$3, followers=$4, access_token_enc=$5,
+            token_expires_at=now()+make_interval(secs => $6), connected_at=now() WHERE influencer_id=$1 AND platform='INSTAGRAM'`, values);
+        } else {
+          await c.query(`INSERT INTO social_accounts (influencer_id, platform, external_id, handle, followers, access_token_enc, token_expires_at)
+            VALUES ($1,'INSTAGRAM',$2,$3,$4,$5, now()+make_interval(secs => $6))`, values);
+        }
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'ER_DUP_ENTRY') throw conflict('INSTAGRAM_IN_USE', 'This Instagram account is already connected to another creator. Please contact support.');
+      throw error;
+    }
     res.json({ handle: a.handle });
   });
   // Proves channel ownership: the creator puts a one-time code in their channel description.
@@ -124,11 +135,24 @@ export function influencerRoutes() {
     const ch = await resolveChannel(p.handle!);
     if (!ch || ch.id !== p.channelId) throw new AppError(404, 'CHANNEL_NOT_FOUND', 'We could not find that YouTube channel');
     if (!ch.description.includes(p.code!)) throw new AppError(400, 'CODE_NOT_FOUND', `We could not find ${p.code} in your channel description. Save it there, wait a minute, and try again.`);
-    await pool.query(
-      `INSERT INTO social_accounts (influencer_id, platform, external_id, handle, followers) VALUES ($1,'YOUTUBE',$2,$3,$4)
-       ON CONFLICT (influencer_id, platform) DO UPDATE SET external_id=EXCLUDED.external_id, handle=EXCLUDED.handle, followers=EXCLUDED.followers, connected_at=now()`,
-      [req.user.id, ch.id, p.handle, ch.followers]);
-    await audit(pool, req.user.id, 'YOUTUBE_CONNECTED', 'influencer', req.user.id, null, { channelId: ch.id });
+    try {
+      await withTx(async (c) => {
+        await c.query(`SELECT id FROM users WHERE id=$1 FOR UPDATE`, [req.user.id]);
+        const existing = await c.query(`SELECT id FROM social_accounts WHERE influencer_id=$1 AND platform='YOUTUBE'`, [req.user.id]);
+        const values = [req.user.id, ch.id, p.handle, ch.followers];
+        if (existing.rowCount) {
+          await c.query(`UPDATE social_accounts SET external_id=$2, handle=$3, followers=$4, connected_at=now()
+            WHERE influencer_id=$1 AND platform='YOUTUBE'`, values);
+        } else {
+          await c.query(`INSERT INTO social_accounts (influencer_id, platform, external_id, handle, followers)
+            VALUES ($1,'YOUTUBE',$2,$3,$4)`, values);
+        }
+        await audit(c, req.user.id, 'YOUTUBE_CONNECTED', 'influencer', req.user.id, null, { channelId: ch.id });
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'ER_DUP_ENTRY') throw conflict('YOUTUBE_IN_USE', 'This YouTube channel is already connected to another creator. Please contact support.');
+      throw error;
+    }
     res.json({ channel: ch.title });
   });
 

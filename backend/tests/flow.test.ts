@@ -318,6 +318,18 @@ test('TDS 194R: 10% once yearly benefits pass Rs 20,000; taken from pay, restore
   assert.match(report.text, /194R,10\.00,Yes,10000\.00,2500\.00/);
   await clearQueue();
 });
+test('Admin creates campaigns with empty and populated posting specifications', async () => {
+  const app = buildApp();
+  const authorization = `Bearer ${jwt.sign({ id: admin, role: 'ADMIN', storeId: null }, process.env.JWT_SECRET!)}`;
+  const common = { title: 'Campaign test', brief: 'A campaign description', categoryId: await categoryId(), storeIds: [store],
+    startsAt: '2030-01-01T00:00:00.000Z', expiresAt: '2030-02-01T00:00:00.000Z', budgetPaise: 250000, submissionQuota: 1 };
+  for (const specs of [{}, { postingHashtags: ['#Lotus'], postingMentions: ['@lotus'] }]) {
+    const result = await request(app).post('/admin/campaigns').set('authorization', authorization).send({ ...common, ...specs }).expect(201);
+    const saved = await q1(`SELECT posting_hashtags, posting_mentions FROM campaigns WHERE id=$1`, [result.body.id]);
+    assert.deepEqual(saved.posting_hashtags, specs.postingHashtags ?? []);
+    assert.deepEqual(saved.posting_mentions, specs.postingMentions ?? []);
+  }
+});
 test('Posting specs: admin sets them, creator sees them, a post missing a tag is held', async () => {
   const app = buildApp();
   const h = { authorization: `Bearer ${jwt.sign({ id: admin, role: 'ADMIN', storeId: null }, process.env.JWT_SECRET!)}` };

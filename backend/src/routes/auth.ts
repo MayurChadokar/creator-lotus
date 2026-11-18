@@ -216,7 +216,7 @@ export function authRoutes() {
       throw new AppError(400, 'BAD_CODE', 'That code is not right. Try the newest code.');
     }
     const codes = Array.from({ length: 8 }, () => crypto.randomBytes(5).toString('hex'));
-    await pool.query(`UPDATE users SET mfa_enabled_at=now(), recovery_hashes=$2 WHERE id=$1`, [u.id, codes.map((c) => lookupHash(c))]);
+    await pool.query(`UPDATE users SET mfa_enabled_at=now(), recovery_hashes=$2 WHERE id=$1`, [u.id, JSON.stringify(codes.map((c) => lookupHash(c)))]);
     await audit(pool, u.id, 'MFA_ENABLED', 'user', u.id);
     res.json({ token: sessionFor(u), role: u.role, name: u.full_name, recoveryCodes: codes });
   });

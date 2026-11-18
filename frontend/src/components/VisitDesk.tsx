@@ -4,7 +4,7 @@ import { api, useApi } from '@/lib/api';
 import { Button, FormModal, Loaded, Section, Status, Table, useAct, useToast } from './ui';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const when = (d: string) => new Date(d).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const when = (d: string) => `${new Date(d).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} IST`;
 type W = { weekday: number; start_time: string; end_time: string; slot_minutes: number; capacity: number };
 
 export function VisitDesk({ base, storeId }: { base: string; storeId: string | null }) {

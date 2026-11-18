@@ -5,7 +5,7 @@ import { Button, Fields, inputCls, Loaded, Notice, Section, Status, Table, useAc
 import { CreatorPageHead } from '@/components/CreatorPageHead';
 
 const ist = (d: string, o: Intl.DateTimeFormatOptions) => new Date(d).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', ...o });
-const when = (d: string) => ist(d, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const when = (d: string) => `${ist(d, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} IST`;
 
 export default function Visits() {
   const stores = useApi<any[]>('/public/stores');

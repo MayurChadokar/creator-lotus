@@ -1,7 +1,6 @@
 'use client';
-import { api, useApi } from '@/lib/api';
+import { api, dateTimeIst, useApi } from '@/lib/api';
 import { Button, Loaded, Notice, PageHead, Section, Table, useAct } from '@/components/ui';
-const when = (d: string) => new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
 
 export default function Sharing() {
   const list = useApi<any[]>('/admin/sharing');
@@ -17,7 +16,7 @@ export default function Sharing() {
     { head: 'Campaign', cell: (r: any) => r.campaign },
     { head: 'Post', cell: (r: any) => <a className="underline" href={r.post_url} target="_blank" rel="noopener noreferrer">Open {r.platform === 'INSTAGRAM' ? 'Instagram' : 'YouTube'} post</a> },
     isDone
-      ? { head: 'Shared', cell: (r: any) => `${when(r.shared_at)} by ${r.shared_by_name ?? 'admin'}` }
+      ? { head: 'Shared', cell: (r: any) => `${dateTimeIst(r.shared_at)} by ${r.shared_by_name ?? 'admin'}` }
       : { head: 'What to do', cell: (r: any) => what(r) },
     { head: 'Action', cell: (r: any) => isDone
         ? <Button disabled={busy} onClick={() => mark(r.id, false)}>Undo</Button>

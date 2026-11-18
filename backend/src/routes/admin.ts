@@ -78,7 +78,7 @@ export function adminRoutes() {
   r.post('/staff/:id/reset-two-step', async (req, res) => {
     const b = z.object({ reason: z.string().min(3).max(300) }).parse(req.body);
     if (req.params.id === req.user.id) throw conflict('SELF', 'Another admin must do this for you.');
-    const u = await pool.query(`UPDATE users SET totp_secret_enc=NULL, mfa_enabled_at=NULL, recovery_hashes='{}', token_version=token_version+1 WHERE id=$1 AND role='ADMIN'`, [req.params.id]);
+    const u = await pool.query(`UPDATE users SET totp_secret_enc=NULL, mfa_enabled_at=NULL, recovery_hashes='[]', token_version=token_version+1 WHERE id=$1 AND role='ADMIN'`, [req.params.id]);
     if (!u.rowCount) throw notFound('Admin');
     await audit(pool, req.user.id, 'MFA_RESET', 'user', req.params.id!, b.reason);
     await alertAdmins(pool, req.user.id, "An admin's two-step login was reset", b.reason); await flushOutbox();
@@ -140,8 +140,8 @@ export function adminRoutes() {
       const { rows: [k] } = await c.query(
         `INSERT INTO campaigns (title, brief, category_id, starts_at, expires_at, budget_paise, submission_quota, min_engagement_bps, min_views, measurement_days, required_disclosure, created_by, posting_hashtags, posting_mentions, posting_guidelines, collab_account)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id`,
-        [b.title, b.brief, b.categoryId, b.startsAt, b.expiresAt, b.budgetPaise, b.submissionQuota, b.minEngagementBps, b.minViews, b.measurementDays, b.requiredDisclosure, req.user.id,
-         b.postingHashtags, b.postingMentions, b.postingGuidelines?.trim() || null, b.collabAccount ?? null]);
+        [b.title, b.brief, b.categoryId, new Date(b.startsAt), new Date(b.expiresAt), b.budgetPaise, b.submissionQuota, b.minEngagementBps, b.minViews, b.measurementDays, b.requiredDisclosure, req.user.id,
+         JSON.stringify(b.postingHashtags), JSON.stringify(b.postingMentions), b.postingGuidelines?.trim() || null, b.collabAccount ?? null]);
       for (const s of b.storeIds) await c.query(`INSERT INTO campaign_stores VALUES ($1,$2)`, [k.id, s]);
       await saveTierRates(c, k.id, b.tierRates);
       await audit(c, req.user.id, 'CAMPAIGN_CREATED', 'campaign', k.id);
@@ -153,7 +153,7 @@ export function adminRoutes() {
   r.put('/campaigns/:id/posting', async (req, res) => {
     const b = z.object({ ...postingSpecs, requiredDisclosure: z.boolean().optional() }).parse(req.body);
     const u = await pool.query(`UPDATE campaigns SET posting_hashtags=$2, posting_mentions=$3, posting_guidelines=$4, collab_account=$5, required_disclosure=COALESCE($6, required_disclosure) WHERE id=$1`,
-      [req.params.id, b.postingHashtags, b.postingMentions, b.postingGuidelines?.trim() || null, b.collabAccount ?? null, b.requiredDisclosure ?? null]);
+      [req.params.id, JSON.stringify(b.postingHashtags), JSON.stringify(b.postingMentions), b.postingGuidelines?.trim() || null, b.collabAccount ?? null, b.requiredDisclosure ?? null]);
     if (!u.rowCount) throw notFound('Campaign');
     await audit(pool, req.user.id, 'POSTING_SPECS_CHANGED', 'campaign', req.params.id!, null, b);
     res.json({ ok: true });
@@ -294,7 +294,7 @@ export function adminRoutes() {
         `SELECT COALESCE(SUM(value_paise),0)::bigint g, COALESCE(SUM(tds_paise),0)::bigint t FROM benefit_records WHERE influencer_id=$1 AND tax_year=$2 AND status<>'VOID'`, [b.influencerId, year]);
       const { rows: [tax] } = await c.query(`SELECT pan_status, pan_encrypted FROM tax_records WHERE influencer_id=$1`, [b.influencerId]);
       const panOperative = !!tax && tax.pan_status !== 'INOPERATIVE';
-      const { tdsPaise, rateBps } = computeTds({ grossPaise: b.valuePaise, priorGrossThisYearPaise: prior.g, priorTdsThisYearPaise: prior.t, panOperative, rule: ruleTerms(rule) });
+      const { tdsPaise, rateBps } = computeTds({ grossPaise: b.valuePaise, priorGrossThisYearPaise: Number(prior.g), priorTdsThisYearPaise: Number(prior.t), panOperative, rule: ruleTerms(rule) });
       const open = b.recoverFromPayout && tdsPaise > 0;
       const { rows: [r] } = await c.query(
         `INSERT INTO benefit_records (influencer_id, tds_rule_id, description, value_paise, given_on, tax_year, tds_paise, rate_bps, pan_applied, pan_encrypted, recover_from_payout, status, recorded_by)
@@ -428,7 +428,7 @@ export function adminRoutes() {
   r.get('/tax-report.csv', async (req, res) => {
     const year = z.string().regex(/^\d{4}-\d{2}$/).default(taxYear(istDate())).parse(req.query.year);
     const { rows } = await pool.query(
-      `SELECT x.legal_name, COALESCE(l.pan_encrypted, x.pan_encrypted) pan_encrypted, r.legacy_section, l.rate_bps, l.pan_applied, l.gross_paise, l.tds_paise, l.created_at::date::text AS on_date, i.status
+      `SELECT x.legal_name, COALESCE(l.pan_encrypted, x.pan_encrypted) pan_encrypted, r.legacy_section, l.rate_bps, l.pan_applied, l.gross_paise, l.tds_paise, DATE_FORMAT(l.created_at, '%Y-%m-%d') AS on_date, i.status
          FROM tds_ledger l JOIN tax_records x ON x.influencer_id=l.influencer_id JOIN tds_rules r ON r.id=l.tds_rule_id
          JOIN payment_batch_items i ON i.id=l.batch_item_id
         WHERE l.tax_year=$1 AND NOT l.is_void ORDER BY l.created_at`, [year]);
