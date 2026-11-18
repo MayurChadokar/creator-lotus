@@ -1,59 +1,56 @@
 'use client';
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { date, useApi } from '@/lib/api';
 import { Logo } from '@/components/Logo';
-import { PriceTag } from '@/components/ui';
 
 const STEPS = [
-  ['Join and get approved', 'Add your PAN and payout details, connect your account, and our team reviews your profile.'],
-  ['Pick a store campaign', 'Choose a brief for mobiles, TVs, ACs, laptops and more at a store near you.'],
-  ['Film at the store, then post', 'Book a visit and film the demo at the store. Publish the video live on your own account, then paste the link here. We check it automatically.'],
-  ['Get paid', 'Once your post passes, payment is due within 3 working days, after tax.'],
+  ['01', 'Set up your profile', 'Create an account, accept the terms and add your PAN, payout details and social account. The Lotus team reviews your profile.'],
+  ['02', 'Choose a campaign', 'Browse open campaigns, check the brief, store locations and requirements, then pick one that suits your content.'],
+  ['03', 'Create and submit', 'Request a store visit, film your content, publish it on your connected account and submit the post link.'],
+  ['04', 'Follow your progress', 'Track your post review and measurement in the dashboard. Once approved, follow your earnings and payment status.'],
 ];
 
 export default function Home() {
   const campaigns = useApi<any[]>('/public/campaigns');
-  return (
-    <div>
-      <div className="bg-ink text-white">
-        <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 md:px-8">
-          <Logo light />
-          <Link href="/login" className="min-h-[40px] content-center px-2 font-medium underline">Log in</Link>
-        </header>
-        <div className="mx-auto max-w-6xl px-4 pb-14 pt-8 md:px-8 md:pb-20 md:pt-14">
-          <h1 className="display max-w-4xl" style={{ fontSize: 'clamp(2.3rem, 7vw, 4.6rem)' }}>Make videos for your nearest Lotus Electronics store. Get paid for real views.</h1>
-          <p className="mt-5 max-w-xl text-lg text-white/85">Paid campaigns for local creators from Lotus Electronics Supermarket, with your pay worked out in the open: base pay, a view bonus, and a higher rate on big-ticket products.</p>
-          <div className="mt-7 flex flex-wrap items-center gap-6">
-            <Link href="/register" className="inline-block rounded-[3px] bg-tag px-6 py-3 font-bold text-ink hover:bg-[#ffdf5c]">Join as a creator</Link>
-            <PriceTag label="Payment due" amount="3 working days" />
-          </div>
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+    const elements = document.querySelectorAll<HTMLElement>('.landing-scroll');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { entry.target.classList.toggle('is-visible', entry.isIntersecting); });
+    }, { threshold: 0.12 });
+    elements.forEach((element) => { element.classList.add('motion-ready'); observer.observe(element); });
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+    const cards = document.querySelectorAll<HTMLElement>('.landing-steps li, .landing-campaign');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { entry.target.classList.toggle('card-visible', entry.isIntersecting); });
+    }, { threshold: 0.1 });
+    cards.forEach((card) => { card.classList.add('card-motion-ready'); observer.observe(card); });
+    return () => observer.disconnect();
+  }, [campaigns.data]);
+  return <div className="landing-page bg-[#fbfcfa] text-[#193934]">
+    <header className="border-b border-[#e4eeeb] bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-8 sm:py-4"><Link href="/" aria-label="Lotus home" className="landing-logo shrink-0"><Logo large /></Link><nav aria-label="Main navigation" className="flex shrink-0 items-center gap-3 sm:gap-6"><a className="hidden text-sm font-medium text-[#48635e] hover:text-[#168b8e] md:block" href="#how-it-works">How it works</a><a className="hidden text-sm font-medium text-[#48635e] hover:text-[#168b8e] md:block" href="#campaigns">Campaigns</a><Link className="whitespace-nowrap text-sm font-semibold text-[#28544c]" href="/login">Log in</Link><Link className="whitespace-nowrap rounded-md bg-[#178d8f] px-3 py-2.5 text-sm font-semibold text-white hover:bg-[#116f70] sm:px-4" href="/register"><span className="sm:hidden">Join</span><span className="hidden sm:inline">Become a creator ↗</span></Link></nav></div></header>
+    <main>
+      <section className="relative overflow-hidden bg-[#f6faf8]">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-32 top-0 h-[30rem] w-[30rem] rounded-full bg-[#e1f2ec] blur-3xl" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1fr_0.86fr] lg:gap-20 lg:py-20">
+          <div className="landing-reveal"><p className="inline-flex items-center gap-2 rounded-full border border-[#c9e4da] bg-white px-3 py-1.5 text-xs font-semibold tracking-wide text-[#177b78]"><span className="h-2 w-2 rounded-full bg-[#2ca8a0]" />The Lotus Creator Network</p><h1 className="mt-7 max-w-2xl text-[#173c36]"><span className="landing-headline-line">Your ideas.</span><span className="landing-headline-line landing-headline-accent text-[#198f8e]">Your next opportunity.</span></h1><p className="mt-6 max-w-lg text-base leading-7 text-[#5a716c] sm:text-lg">Create content for Lotus campaigns, connect with your local store and follow your earnings in one place.</p><div className="mt-8 flex flex-wrap items-center gap-3"><Link href="/register" className="rounded-md bg-[#168d8e] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#116f70]">Join as a creator <span aria-hidden="true" className="ml-2">→</span></Link><a href="#how-it-works" className="rounded-md border border-[#c5ded6] bg-white px-6 py-3.5 text-sm font-semibold text-[#295b53] transition hover:bg-[#edf8f4]">See how it works</a></div><div className="mt-9 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#dcebe5] pt-5 text-sm font-medium text-[#617d73]"><span>Discover campaigns</span><span aria-hidden="true">·</span><span>Create at Lotus stores</span><span aria-hidden="true">·</span><span>Track earnings</span></div></div>
+          <div className="landing-hero-image relative mx-3 mb-2 min-w-0 sm:mx-4 lg:mx-0"><div className="absolute -inset-3 rounded-2xl bg-[#d8eee5] sm:-inset-4" /><img src="/creator-hero.png" alt="A creator filming a product in an electronics showroom" className="relative aspect-[5/4] w-full rounded-xl object-cover shadow-[0_20px_50px_rgba(23,75,67,0.12)]" /><div className="absolute -bottom-4 left-3 flex items-center gap-3 rounded-lg border border-[#dbeae5] bg-white px-4 py-3 shadow-lg sm:-left-6 sm:bottom-6"><span className="grid h-10 w-10 place-items-center rounded-md bg-[#e9f7f1] text-[#178d8f]" aria-hidden="true">✦</span><div><p className="text-xs font-semibold uppercase tracking-wide text-[#6c8b80]">Made for creators</p><p className="mt-0.5 text-sm font-semibold text-[#244e46]">Create with Lotus</p></div></div></div>
         </div>
-      </div>
-      <main className="mx-auto max-w-6xl px-4 py-12 md:px-8">
-        <h2 className="display !text-2xl">How it works</h2>
-        <ol className="mt-5 grid gap-6 md:grid-cols-4">
-          {STEPS.map(([t, d], i) => (
-            <li key={t} className="border-t-2 border-ink pt-3">
-              <div className="display text-2xl">{i + 1}</div>
-              <h3 className="mt-1 font-bold">{t}</h3>
-              <p className="mt-1 text-muted">{d}</p>
-            </li>
-          ))}
-        </ol>
-        <h2 className="display mt-14 !text-2xl">Open campaigns</h2>
-        {campaigns.error && <p className="mt-3 text-muted">Campaigns could not be loaded right now. Refresh to try again.</p>}
-        {campaigns.data?.length === 0 && <p className="mt-3 text-muted">No campaigns are open today. Join now and you can apply as soon as one opens.</p>}
-        <ul className="mt-3">
-          {campaigns.data?.map((c) => (
-            <li key={c.id} className="grid gap-1 border-b border-line py-4 md:grid-cols-[1fr_10rem_9rem] md:gap-6">
-              <div><h3 className="font-bold">{c.title}</h3><p className="max-w-2xl text-muted">{c.brief}</p></div>
-              <div>{c.category}{c.cities ? `, ${c.cities}` : ''}</div>
-              <div className="text-muted">Until {date(c.expires_at)}</div>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-12 text-sm text-muted">Store staff and admins can <Link href="/login" className="underline">log in here</Link>.</p>
-      </main>
-    </div>
-  );
+      </section>
+      <section id="how-it-works" className="scroll-mt-4 border-y border-[#e5efeb] bg-[#f1f8f5] py-16 sm:py-20"><div className="landing-scroll mx-auto max-w-7xl px-5 sm:px-8"><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#168b8e]">Your creator journey</p><div className="mt-3 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold tracking-tight text-[#173c36] sm:text-4xl">How it works</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[#647b73]">From setting up your profile to tracking your earnings, here's what to expect at every step.</p></div><Link href="/register" className="text-sm font-semibold text-[#147f80] hover:underline">Get started →</Link></div><ol className="landing-steps mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{STEPS.map(([n,title,description]) => <li key={n} className="rounded-lg border border-[#d8e9e2] bg-white p-5 sm:p-6"><span className="text-sm font-semibold text-[#198f8e]">{n}</span><h3 className="mt-5 text-lg font-semibold text-[#173c36]">{title}</h3><p className="mt-3 text-sm leading-6 text-[#61766f]">{description}</p></li>)}</ol><p className="mt-5 text-sm leading-6 text-[#61766f]">Campaign participation and payment are subject to profile approval and the relevant campaign checks.</p></div></section>
+      <section className="landing-scroll mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[1fr_1.2fr] lg:gap-20"><div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#168b8e]">Built for creators</p><h2 className="mt-3 max-w-lg text-3xl font-semibold tracking-tight text-[#173c36] sm:text-4xl">Good ideas deserve a clear path.</h2><p className="mt-4 max-w-lg text-base leading-7 text-[#61766f]">Everything you need to work with Lotus, from your first brief to following your earnings.</p></div><div className="grid gap-5 sm:grid-cols-2"><div className="border-l-2 border-[#75c6b8] pl-5"><h3 className="font-semibold text-[#173c36]">Discover opportunities</h3><p className="mt-2 text-sm leading-6 text-[#61766f]">Find open campaigns and see the details before you create.</p></div><div className="border-l-2 border-[#75c6b8] pl-5"><h3 className="font-semibold text-[#173c36]">Stay in the loop</h3><p className="mt-2 text-sm leading-6 text-[#61766f]">Track your submissions, store visits and payments in one place.</p></div></div></section>
+      <section id="campaigns" className="landing-scroll mx-auto max-w-7xl scroll-mt-4 px-5 py-16 sm:px-8 sm:py-20"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#168b8e]">Your next opportunity</p><h2 className="mt-3 text-3xl font-semibold tracking-tight text-[#173c36] sm:text-4xl">Explore open campaigns</h2><p className="mt-3 text-sm text-[#647b73]">Find a brief that matches your creative style.</p></div><Link href="/register" className="text-sm font-semibold text-[#147f80] hover:underline">Join the network →</Link></div>
+        {campaigns.loading && !campaigns.data && <p className="mt-8 text-sm text-muted">Loading campaigns…</p>}
+        {campaigns.error && <p className="mt-8 rounded-lg border border-[#dfeae6] bg-white p-5 text-sm text-muted">Campaigns could not be loaded right now. Please refresh to try again.</p>}
+        {campaigns.data?.length === 0 && <p className="mt-8 rounded-lg border border-[#dfeae6] bg-white p-5 text-sm text-muted">No campaigns are open right now. Join the network and check back for new opportunities.</p>}
+        <ul className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{campaigns.data?.map((c) => <li key={c.id} className="landing-campaign flex flex-col rounded-lg border border-[#dfeae6] bg-white p-6 shadow-sm"><p className="text-xs font-semibold uppercase tracking-wider text-[#168b8e]">{c.category}</p><h3 className="mt-3 text-lg font-semibold text-[#173c36]">{c.title}</h3><p className="mt-2 flex-1 text-sm leading-6 text-[#647b73]">{c.brief}</p><div className="mt-5 flex flex-wrap justify-between gap-2 border-t border-[#edf2ef] pt-4 text-xs text-[#6b827a]"><span>{c.cities || 'Lotus stores'}</span><span>Open until {date(c.expires_at)}</span></div></li>)}</ul>
+      </section>
+      <section className="bg-[#164e48] text-white"><div className="landing-scroll mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-5 py-12 sm:px-8 sm:py-16"><div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#a8dcd1]">Let's create together</p><h2 className="mt-3 text-3xl font-semibold tracking-tight">Ready to create with Lotus?</h2><p className="mt-2 text-sm text-[#c8e4dd]">Join the network and discover your next opportunity.</p></div><Link href="/register" className="rounded-md bg-white px-6 py-3 text-sm font-semibold text-[#176a64] hover:bg-[#e9f7f3]">Join as a creator →</Link></div></section>
+    </main>
+    <footer className="bg-[#113e39] text-[#c7ddd6]"><div className="landing-scroll mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-5 py-8 text-sm sm:px-8"><div className="flex flex-wrap items-center gap-4"><Link href="/" aria-label="Lotus home"><Logo /></Link><span>Lotus Electronics Supermarket</span></div><div className="flex flex-wrap gap-5"><Link href="/privacy" className="hover:text-white">Privacy</Link><Link href="/data-deletion" className="hover:text-white">Data deletion</Link><Link href="/login" className="hover:text-white">Staff & creator login</Link></div></div></footer>
+  </div>;
 }

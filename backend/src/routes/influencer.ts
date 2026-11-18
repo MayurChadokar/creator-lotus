@@ -196,7 +196,7 @@ export function influencerRoutes() {
     res.json(rows);
   });
   r.post('/visits', async (req, res) => {
-    const b = z.object({ storeId: z.string().uuid(), slotStart: z.string().datetime(), purpose: z.string().trim().min(5).max(500), campaignId: z.string().uuid().optional() }).parse(req.body);
+    const b = z.object({ storeId: z.string().uuid(), slotStart: z.string().datetime(), purpose: z.string().trim().min(5, 'Please describe your visit in at least 5 characters.').max(500, 'Please keep your visit description within 500 characters.'), campaignId: z.string().uuid().optional() }).parse(req.body);
     res.status(201).json({ id: await requestVisit(req.user.id, b) });
   });
   r.post('/visits/:id/cancel', async (req, res) => {

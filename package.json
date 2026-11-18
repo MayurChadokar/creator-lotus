@@ -2,6 +2,12 @@
   "name": "influencer-platform",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "db:setup": "npm --prefix backend run db:setup",
+    "db:demo": "npm --prefix backend run db:demo"
+  },
   "engines": {
     "node": ">=20.12.2"
   },

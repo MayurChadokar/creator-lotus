@@ -11,7 +11,7 @@ export function Button({ kind = 'plain', busy, className = '', children, ...p }:
   }[kind];
   return (
     <button {...p} disabled={busy || p.disabled}
-      className={`min-h-[40px] border px-3.5 py-1.5 text-sm font-semibold rounded-[3px] disabled:opacity-50 ${look} ${className}`}>
+      className={`ui-button ui-button-${kind} min-h-[40px] rounded-xl border px-3.5 py-1.5 text-sm font-bold shadow-sm transition disabled:opacity-50 ${look} ${className}`}>
       {children}
     </button>
   );
@@ -19,10 +19,10 @@ export function Button({ kind = 'plain', busy, className = '', children, ...p }:
 
 // ---- Status badges ----
 const TONES: Record<string, string> = {
-  good: 'text-go border-go', bad: 'text-stop border-stop', wait: 'text-wait border-wait', none: 'text-muted border-line',
+  good: 'text-[#087565] border-[#c8eddf] bg-[#e8f8f1]', bad: 'text-stop border-[#f5cac5] bg-[#fff0ef]', wait: 'text-wait border-[#f1d9ad] bg-[#fff6e5]', none: 'text-muted border-line bg-[#f7f9fb]',
 };
 export function Badge({ tone = 'none', children }: { tone?: keyof typeof TONES; children: ReactNode }) {
-  return <span className={`inline-block whitespace-nowrap border rounded-full px-2 text-xs font-semibold leading-5 bg-white ${TONES[tone]}`}>{children}</span>;
+  return <span className={`inline-block whitespace-nowrap rounded-full border px-2.5 text-xs font-bold leading-6 ${TONES[tone]}`}>{children}</span>;
 }
 const STATUS: Record<string, [string, keyof typeof TONES]> = {
   PENDING_VERIFICATION: ['Checking post', 'wait'], MEASURING: ['Collecting views', 'wait'], RESTRICTED: ['Needs review', 'wait'],
@@ -57,18 +57,18 @@ export const Figure = ({ label, value, tone }: { label: string; value: ReactNode
 
 // ---- Page structure ----
 export const PageHead = ({ title, intro, action }: { title: string; intro?: string; action?: ReactNode }) => (
-  <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+  <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
     <div className="max-w-2xl">
-      <h1 className="display">{title}</h1>
-      {intro && <p className="mt-1.5 text-muted">{intro}</p>}
+      <h1 className="display text-3xl">{title}</h1>
+      {intro && <p className="mt-1 text-sm text-muted">{intro}</p>}
     </div>
     {action && <div className="flex flex-wrap gap-2">{action}</div>}
   </div>
 );
 export const Section = ({ title, intro, action, children }: { title?: string; intro?: string; action?: ReactNode; children: ReactNode }) => (
-  <section className="mb-8">
+  <section className="ops-card mb-4 overflow-hidden p-4">
     {(title || action) && (
-      <div className="mb-2 flex flex-wrap items-end justify-between gap-2 border-b-2 border-ink pb-1.5">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2 border-b border-line pb-3">
         <div>
           {title && <h2 className="display">{title}</h2>}
           {intro && <p className="text-sm text-muted">{intro}</p>}
@@ -80,7 +80,7 @@ export const Section = ({ title, intro, action, children }: { title?: string; in
   </section>
 );
 export const Notice = ({ tone = 'info', children }: { tone?: 'info' | 'bad'; children: ReactNode }) => (
-  <div role={tone === 'bad' ? 'alert' : undefined} className={`mb-4 border-l-4 bg-white px-3 py-2 text-sm ${tone === 'bad' ? 'border-stop' : 'border-tag'}`}>{children}</div>
+  <div role={tone === 'bad' ? 'alert' : undefined} className={`mb-4 rounded-xl border border-l-4 bg-white px-4 py-3 text-sm shadow-sm ${tone === 'bad' ? 'border-stop' : 'border-[#0f9d8a]'}`}>{children}</div>
 );
 export function Loaded({ state, children }: { state: { loading: boolean; error: string | null; data: unknown }; children: ReactNode }) {
   if (state.error && !state.data) return <Notice tone="bad">{state.error}</Notice>;
@@ -93,14 +93,14 @@ export interface Col<T> { head: string; cell: (row: T) => ReactNode; right?: boo
 export function Table<T>({ cols, rows, rowKey, empty }: { cols: Col<T>[]; rows: T[] | null | undefined; rowKey: (r: T) => string; empty: string }) {
   if (!rows?.length) return <p className="py-5 text-muted">{empty}</p>;
   return (
-    <table className="stack-table w-full border-collapse text-sm">
+    <table className="stack-table w-full border-separate border-spacing-0 text-sm">
       <thead>
-        <tr>{cols.map((c) => <th key={c.head} scope="col" className={`border-b border-line px-2 py-2 font-semibold text-muted align-bottom ${c.right ? 'text-right' : 'text-left'}`}>{c.head}</th>)}</tr>
+        <tr>{cols.map((c) => <th key={c.head} scope="col" className={`border-y border-line bg-[#f6f8fb] px-3 py-2.5 font-bold text-muted first:rounded-l-lg first:border-l last:rounded-r-lg last:border-r ${c.right ? 'text-right' : 'text-left'}`}>{c.head}</th>)}</tr>
       </thead>
       <tbody>
         {rows.map((r) => (
-          <tr key={rowKey(r)}>
-            {cols.map((c) => <td key={c.head} data-label={c.head} className={`border-b border-line px-2 py-2.5 align-top ${c.right ? 'text-right' : ''}`}>{c.cell(r)}</td>)}
+          <tr key={rowKey(r)} className="transition hover:bg-[#f9fbfc]">
+            {cols.map((c) => <td key={c.head} data-label={c.head} className={`border-b border-line px-3 py-3 align-top ${c.right ? 'text-right' : ''}`}>{c.cell(r)}</td>)}
           </tr>
         ))}
       </tbody>
@@ -123,7 +123,10 @@ export function ToastHost({ children }: { children: ReactNode }) {
     <ToastCtx.Provider value={show}>
       {children}
       <div aria-live="polite" className="pointer-events-none fixed bottom-20 left-4 right-4 z-[60] md:bottom-6 md:left-auto md:w-96">
-        {t && <div className={`pointer-events-auto rounded-[3px] px-4 py-3 text-sm font-medium text-white shadow-lg ${t.bad ? 'bg-stop' : 'bg-ink'}`}>{t.text}</div>}
+        {t && <div role={t.bad ? 'alert' : 'status'} className={`pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm font-medium shadow-lg ${t.bad ? 'border-[#f2c6c2] bg-[#fff5f4] text-[#9c2d24]' : 'border-[#a9d9c0] bg-[#ecf9f1] text-[#176342]'}`}>
+          <svg aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" />{t.bad ? <path d="M12 8v5m0 3h.01" /> : <path d="m8 12 2.5 2.5L16 9" />}</svg>
+          <span>{t.text}</span>
+        </div>}
       </div>
     </ToastCtx.Provider>
   );
@@ -147,9 +150,10 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
   useEffect(() => { const d = ref.current; if (d && !d.open) d.showModal(); return () => d?.close(); }, []);
   return (
     <dialog ref={ref} onCancel={(e) => { e.preventDefault(); onClose?.(); }}
-      className={`w-[calc(100%-1.5rem)] ${wide ? 'max-w-2xl' : 'max-w-lg'} max-h-[90dvh] border-t-4 border-tag bg-white p-0 text-ink shadow-2xl backdrop:bg-ink/60`}>
-      <div className="p-5">
-        <h2 className="display mb-4">{title}</h2>
+      aria-labelledby="modal-title"
+      className={`ui-modal w-[calc(100%-1.5rem)] ${wide ? 'max-w-2xl' : 'max-w-lg'} max-h-[90dvh] rounded-2xl border border-line bg-white p-0 text-ink shadow-2xl backdrop:bg-ink/60`}>
+      <div className="ui-modal-content p-5">
+        <div className="ui-modal-heading flex items-start justify-between gap-4"><h2 id="modal-title" className="display mb-4">{title}</h2>{onClose && <button type="button" aria-label="Close dialog" onClick={onClose} className="ui-modal-close grid h-8 w-8 shrink-0 place-items-center rounded-md text-xl text-muted hover:bg-paper">×</button>}</div>
         {children}
       </div>
     </dialog>
@@ -250,7 +254,7 @@ export function FormModal({ title, intro, fields, submit, danger, onSubmit, onCl
         )}
         {err && <Notice tone="bad">{err}</Notice>}
         <Fields fields={fields.filter((f) => tabOf(f) === tab)} values={values} set={(n, v) => setValues((s) => ({ ...s, [n]: v }))} />
-        <div className="mt-5 flex flex-wrap justify-end gap-2">
+        <div className="ui-form-actions mt-5 flex flex-wrap justify-end gap-2">
           <Button type="button" onClick={onClose}>Cancel</Button>
           <Button type="submit" kind={danger ? 'danger' : 'primary'} busy={busy}>{submit}</Button>
         </div>

@@ -26,7 +26,7 @@ function mysqlQuery(sql: string, params: unknown[]) {
     return '?';
   });
   q = q
-    .replace(/\b(rank|key)\b/gi, '`$1`')
+    .replace(/(?<!`)\b(rank|key)\b(?!`)/gi, '`$1`')
     .replace(/\(now\(\) AT TIME ZONE 'Asia\/Kolkata'\)::date/gi, 'CURRENT_DATE()')
     .replace(/\bnow\(\)\s*-\s*INTERVAL\s+'(\d+)\s+(day|days|hour|hours|minute|minutes)'/gi,
       (_m, amount, unit) => `DATE_SUB(NOW(), INTERVAL ${amount} ${String(unit).replace(/s$/i, '').toUpperCase()})`)
@@ -115,7 +115,7 @@ const rawPool = mysql.createPool({
   timezone: 'Z',
   typeCast(field, next) {
     if (field.type === 'JSON') {
-      const value = field.string();
+      const value = field.string('utf8');
       return value === null ? null : JSON.parse(value);
     }
     return next();

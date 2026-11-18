@@ -10,5 +10,6 @@ dist
 out
 *.log
 *.png
+!frontend/public/creator-hero.png
 *.zip
 tsconfig.tsbuildinfo

@@ -16,13 +16,16 @@ const istIso = (date: string, min: number) => new Date(`${date}T${hhmm(min)}:00+
 /** All slots for one date in India time. Only whole slots that fit inside a window count. */
 export function slotsForDate(windows: Window[], date: string): Slot[] {
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
-  const out: Slot[] = [];
+  const out = new Map<string, Slot>();
   for (const w of windows.filter((x) => x.weekday === weekday)) {
     for (let m = toMin(w.start_time); m + w.slot_minutes <= toMin(w.end_time); m += w.slot_minutes) {
-      out.push({ start: istIso(date, m), end: istIso(date, m + w.slot_minutes), capacity: w.capacity });
+      const slot = { start: istIso(date, m), end: istIso(date, m + w.slot_minutes), capacity: w.capacity };
+      const existing = out.get(slot.start);
+      if (!existing) out.set(slot.start, slot);
+      else out.set(slot.start, { start: slot.start, end: existing.end < slot.end ? existing.end : slot.end, capacity: Math.min(existing.capacity, slot.capacity) });
     }
   }
-  return out.sort((a, b) => a.start.localeCompare(b.start));
+  return [...out.values()].sort((a, b) => a.start.localeCompare(b.start));
 }
 
 const istDateOf = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);

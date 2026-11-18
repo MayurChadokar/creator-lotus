@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { api, date, percent, rupees, useApi } from '@/lib/api';
-import { Button, FormModal, Loaded, PageHead, useToast } from '@/components/ui';
+import { Button, FormModal, Loaded, useToast } from '@/components/ui';
+import { CreatorPageHead } from '@/components/CreatorPageHead';
 import { TermsModal } from '@/components/TermsModal';
 
 export default function Campaigns() {
@@ -13,17 +14,19 @@ export default function Campaigns() {
   const toast = useToast();
   return (
     <>
-      <PageHead title="Open campaigns" intro="Post the video live on your own account first, then paste the link here."
-        action={<Link href="/creator/calculator" className="inline-block min-h-[40px] content-center rounded-[3px] border border-line bg-white px-3.5 text-sm font-semibold">Earnings calculator</Link>} />
+      <div className="mx-auto max-w-6xl">
+      <CreatorPageHead eyebrow="Creator opportunities" title="Open campaigns" intro="Explore available campaigns, publish your content, and submit your post for review."
+        action={<Link href="/creator/calculator" className="inline-flex min-h-10 items-center rounded-lg border border-[#cfdfeb] bg-white px-4 text-sm font-semibold text-[#17365a] hover:bg-[#f2f8fc]">Earnings calculator</Link>} />
       <Loaded state={list}>
         {list.data?.length === 0 && <p className="py-5 text-muted">No campaigns are open right now. New ones appear here as stores launch them.</p>}
-        <ul>
+        <ul className="grid gap-4">
           {list.data?.map((c) => (
-            <li key={c.id} className="border-b border-line py-4">
+            <li key={c.id} className="rounded-2xl border border-[#dce7ef] bg-white p-5 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="max-w-2xl">
-                  <h2 className="display">{c.title}</h2>
-                  <p className="mt-1">{c.brief}</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#168b8e]">{c.category} · Campaign</p>
+                  <h2 className="text-xl font-semibold text-[#17365a]">{c.title}</h2>
+                  <p className="mt-2 leading-6 text-[#425b70]">{c.brief}</p>
                   <p className="mt-2 text-sm text-muted">{c.category}. Open until {date(c.expires_at)}. Needs at least {c.min_views} views and {percent(c.min_engagement_bps)} engagement after {c.measurement_days} days.</p>
                   <p className="mt-1 text-sm text-muted">Stores: {c.stores?.map((s: any) => s.name).join(', ')}</p>
                   {c.my_pay && <p data-testid="my-pay" className="mt-2 font-semibold">Your pay: {rupees(Math.round(c.my_pay.basePayPaise * c.my_pay.multiplierBps / 10000), false)}{c.my_pay.bonusPer10kPaise > 0 && <>, plus {rupees(Math.round(c.my_pay.bonusPer10kPaise * c.my_pay.multiplierBps / 10000), false)} per 10,000 views</>}. Up to {rupees(c.my_pay.maxPaise, false)} in total.</p>}
@@ -53,6 +56,7 @@ export default function Campaigns() {
           else toast(r.status === 'MEASURING' ? `Post found. Final check on ${date(r.measure_due_at)}.` : 'Post received. We will keep trying to check it.');
           await list.reload();
         }} />}
+      </div>
     </>
   );
 }
@@ -62,7 +66,7 @@ function PostingSpecs({ c }: { c: any }) {
   const tags = [...(c.posting_hashtags ?? []), ...(c.posting_mentions ?? [])];
   if (!tags.length && !c.posting_guidelines && !c.required_disclosure && !c.collab_account) return null;
   return (
-    <div className="mt-3 border-l-4 border-tag bg-white p-3">
+    <div className="mt-4 rounded-xl border border-[#dcebe9] bg-[#f5fbfa] p-4">
       <h3 className="font-bold">What to put in your caption</h3>
       {tags.length > 0 && <div className="mt-2 flex flex-wrap items-center gap-2">
         <p data-testid="caption-tags" className="font-semibold">{tags.join(' ')}</p>

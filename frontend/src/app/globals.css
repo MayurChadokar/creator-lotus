@@ -5,6 +5,77 @@
 
 html { -webkit-text-size-adjust: 100%; }
 body { background: theme('colors.paper'); color: theme('colors.ink'); font-variant-numeric: tabular-nums; }
+.landing-page { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.landing-page h1, .landing-page h2 { letter-spacing: -.035em; line-height: 1.12; }
+.landing-page h1 { font-size: clamp(2.4rem, 4vw, 3.9rem); font-weight: 650; }
+@media (max-width: 639px) {
+  .landing-logo img { height: 2.25rem; max-width: 132px; }
+  .landing-page h1 { font-size: clamp(2.15rem, 9vw, 2.8rem); overflow-wrap: anywhere; }
+  .landing-page h2 { font-size: clamp(1.75rem, 7vw, 2.25rem); }
+}
+.landing-headline-line { display: block; animation: landing-enter .65s ease-out .05s both; }
+.landing-headline-accent { animation-delay: .2s; }
+.landing-hero-image { border-radius: 0; }
+.landing-steps li { padding-top: 20px; }
+.landing-steps li > span { display: inline-flex; width: 38px; height: 38px; align-items: center; justify-content: center; border: 1px solid #b6dad1; border-radius: 50%; }
+.landing-campaign { transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.landing-campaign:hover { border-color: #9acfc3; transform: translateY(-3px); box-shadow: 0 12px 30px rgb(23 75 67 / .08); }
+.landing-scroll.motion-ready { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+.landing-scroll.motion-ready.is-visible { opacity: 1; transform: translateY(0); }
+.landing-page .card-motion-ready { opacity: 0; transform: translateY(16px); transition: opacity .55s ease, transform .55s ease, border-color .2s ease, box-shadow .2s ease; }
+.landing-page .card-motion-ready.card-visible { opacity: 1; transform: translateY(0); }
+.landing-page .card-motion-ready:nth-child(2) { transition-delay: .08s; }
+.landing-page .card-motion-ready:nth-child(3) { transition-delay: .16s; }
+.landing-page .card-motion-ready:nth-child(4) { transition-delay: .24s; }
+.landing-page .landing-campaign.card-visible:hover { transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) { .landing-scroll.motion-ready, .landing-page .card-motion-ready { opacity: 1; transform: none; } }
+.landing-reveal { animation: landing-enter .65s ease-out both; }
+.landing-hero-image { animation: landing-enter .8s ease-out .1s both; }
+@keyframes landing-enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.login-page { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+.login-page .display { font-stretch: normal; font-weight: 600; line-height: 1.2; }
+.login-page input:not([type='checkbox']) { min-height: 46px; border: 1px solid #cbdad8; border-radius: 6px; font: inherit; font-size: 14px; }
+.login-page input:focus { border-color: #168b8e; outline: 2px solid rgb(22 139 142 / .18); outline-offset: 0; }
+.login-page .ui-button-primary { min-height: 46px; width: 100%; border-color: #147f80; border-radius: 6px; background: #147f80; font-weight: 600; box-shadow: none; }
+.login-page .ui-button-primary:hover { background: #106c6d; }
+
+/* A calm, familiar interface font for the creator workspace. */
+.creator-portal { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+.creator-portal .display { font-stretch: normal; font-weight: 650; letter-spacing: -0.015em; line-height: 1.2; }
+.creator-portal input, .creator-portal select, .creator-portal textarea, .creator-portal button { font-family: inherit; }
+.creator-portal .ui-button { min-height: 38px; border-radius: 6px; padding: 0 14px; font-size: 13px; font-weight: 600; box-shadow: none; }
+.creator-portal .ui-button-primary { background: #147f80; border-color: #147f80; color: white; }
+.creator-portal .ui-button-primary:hover { background: #106c6d; border-color: #106c6d; }
+.creator-portal .ui-button-plain { background: white; border-color: #cbd7e1; color: #24435e; }
+.creator-portal .ui-button-plain:hover { background: #f4f8fa; border-color: #9aafbf; }
+.creator-portal .ui-button-danger { border-color: #e5b4ae; color: #a32b22; }
+.creator-portal .ui-button:disabled { cursor: not-allowed; }
+.creator-portal .ui-modal { border-radius: 8px; border-color: #d7e1e9; box-shadow: 0 18px 60px rgb(14 35 54 / .24); }
+.creator-portal .ui-modal::backdrop { background: rgb(15 35 55 / .55); }
+.creator-portal .ui-modal-content { padding: 24px; }
+.creator-portal .ui-modal-heading { align-items: center; padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid #e5ebf0; }
+.creator-portal .ui-modal-heading h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.creator-portal .ui-modal-close { color: #63798a; line-height: 1; }
+.creator-portal .ui-form-actions { margin-top: 24px; padding-top: 18px; border-top: 1px solid #e5ebf0; }
+.creator-portal input:not([type='checkbox']):not([type='radio']), .creator-portal select, .creator-portal textarea { border: 1px solid #c5d2dd; border-radius: 6px; background: white; color: #17365a; font-size: 14px; }
+.creator-portal input:not([type='checkbox']):not([type='radio']):focus, .creator-portal select:focus, .creator-portal textarea:focus { border-color: #168b8e; outline: 2px solid rgb(22 139 142 / .18); outline-offset: 0; }
+.creator-portal .ops-card { border-radius: 8px; border-color: #dce4ed; }
+.creator-portal aside { color: #eaf8f7; }
+.creator-portal aside nav a:not([aria-current='page']), .creator-portal aside > div:last-child button { color: #eaf8f7; }
+.creator-portal aside nav a[aria-current='page'] { color: #174d4d; }
+.creator-portal aside nav > p, .creator-portal aside > div:last-child > p, .creator-portal aside > div:first-child > div:nth-of-type(2) { color: #cbeae7; }
+
+.ops-card { border: 1px solid #dfe6ee; border-radius: 14px; background: white; box-shadow: 0 1px 2px rgb(15 35 64 / .04); }
+.ops-kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.ops-icon { display: grid; place-items: center; width: 3rem; height: 3rem; flex: none; border-radius: .8rem; font-size: 1.35rem; font-weight: 800; }
+.ops-icon-teal, .ops-icon-green { color: #087565; background: #dff7f1; }
+.ops-icon-amber { color: #b35b00; background: #fff0d8; }
+.ops-icon-blue { color: #1769c2; background: #e0f0ff; }
+.ops-button { display: inline-flex; min-height: 2.5rem; align-items: center; justify-content: center; gap: .4rem; border: 1px solid #d3dbe5; border-radius: .75rem; background: white; padding: 0 .9rem; font-size: .875rem; font-weight: 700; }
+.ops-button:hover { border-color: #8ea0b5; }
+.ops-button-primary { border-color: #0f2340; background: #0f2340; color: white; }
+@media (min-width: 768px) { .ops-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .ops-kpi-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 
 /* Headings use the wide cut of Archivo: the voice of shop signage. */
 .display { font-stretch: 125%; font-weight: 800; letter-spacing: -0.015em; line-height: 1.08; }

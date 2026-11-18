@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "db:setup": "tsx src/dbSetup.ts",
+    "db:demo": "tsx src/seedDemo.ts",
     "jobs": "tsx src/runJobs.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts"

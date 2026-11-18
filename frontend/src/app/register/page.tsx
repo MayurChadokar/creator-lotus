@@ -9,10 +9,14 @@ export default function Register() {
   const router = useRouter();
   const stores = useApi<any[]>('/public/stores');
   return (
-    <main className="mx-auto max-w-md px-4 py-12">
-      <Link href="/" aria-label="Home"><Logo /></Link>
-      <h1 className="display mb-2 mt-8">Join as a creator</h1>
-      <p className="mb-6 text-muted">Takes about a minute. You will add your PAN and payout details next.</p>
+    <main className="login-page min-h-dvh bg-[#f4f8f8] px-5 py-6 sm:px-8">
+      <header className="relative mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:min-h-16 sm:justify-center"><Link href="/" aria-label="Home"><Logo large /></Link><Link href="/" className="text-sm font-semibold text-[#35645f] hover:text-[#116d6c] sm:absolute sm:right-0">← Back to home</Link></header>
+      <div className="mx-auto my-10 w-full max-w-[500px] overflow-hidden rounded-lg border border-[#dce7e6] bg-white shadow-[0_10px_30px_rgba(20,65,65,0.06)]">
+      <div className="h-1 bg-[#299c9b]" />
+      <div className="px-6 py-8 sm:px-9 sm:py-9">
+      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#168b8e]">Lotus Creator Network</p>
+      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#17365a]">Join as a creator</h1>
+      <p className="mb-7 mt-2 text-sm leading-6 text-[#65798a]">Create your account to get started. You can add your PAN and payout details next.</p>
       <Loaded state={stores}>
         {stores.data && <PageForm submit="Create account" fields={[
           { name: 'fullName', label: 'Full name', required: true },
@@ -37,8 +41,10 @@ export default function Register() {
           router.replace('/creator/profile');
         }} />}
       </Loaded>
-      <p className="mt-4 text-sm"><Link className="text-link underline" href="/privacy" target="_blank">Read the privacy policy</Link></p>
-      <p className="mt-6 text-muted">Already joined? <Link className="text-link underline" href="/login">Log in</Link>.</p>
+      <p className="mt-5 text-sm"><Link className="font-semibold text-[#147f80] hover:underline" href="/privacy" target="_blank" rel="noreferrer">Read the privacy policy</Link></p>
+      <div className="mt-7 border-t border-[#e5eeec] pt-6 text-sm text-[#65798a]">Already joined? <Link className="font-semibold text-[#147f80] hover:underline" href="/login">Log in</Link></div>
+      </div></div>
+      <p className="text-center text-xs text-[#758a89]">Lotus Electronics Supermarket · Creator Network</p>
     </main>
   );
 }

@@ -43,9 +43,9 @@ function toMysqlSchema(source: string): string {
 }
 
 export async function setupDatabase() {
-  const { rows: [{ exists }] } = await pool.query<{ exists: number }>(
-    `SELECT COUNT(*) AS exists FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='users'`);
-  if (!Number(exists)) {
+  const { rows: [{ table_exists }] } = await pool.query<{ table_exists: number }>(
+    `SELECT COUNT(*) AS table_exists FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='users'`);
+  if (!Number(table_exists)) {
     await pool.query(toMysqlSchema(read('schema.sql')));
     await pool.query(read('schema.mysql.triggers.sql'));
   }

@@ -16,8 +16,12 @@ export default function Login() {
   }, [mfa]);
   const finish = (r: any) => { setToken(r.token); router.replace(homeFor(r.role)); };
   return (
-    <main className="mx-auto max-w-md px-4 py-12">
-      <Link href="/" aria-label="Home"><Logo /></Link>
+    <main className="login-page flex min-h-dvh flex-col bg-[#f4f8f8] px-5 py-6 sm:px-8">
+      <header className="relative mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:min-h-16 sm:justify-center"><Link href="/" aria-label="Home"><Logo large /></Link><Link href="/" className="text-sm font-semibold text-[#35645f] hover:text-[#116d6c] sm:absolute sm:right-0">← Back to home</Link></header>
+      <div className="flex flex-1 items-center justify-center py-10">
+      <div className="w-full max-w-[460px] overflow-hidden rounded-lg border border-[#dce7e6] bg-white shadow-[0_10px_30px_rgba(20,65,65,0.06)]">
+      <div className="h-1 bg-[#299c9b]" />
+      <div className="px-6 py-8 sm:px-9 sm:py-9">
       {codes ? (
         <>
           <h1 className="display mb-2 mt-8">Save your recovery codes</h1>
@@ -47,7 +51,9 @@ export default function Login() {
         </>
       ) : (
         <>
-          <h1 className="display mb-6 mt-8">Log in</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#168b8e]">Lotus Creator Network</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#17365a]">Welcome back</h1>
+          <p className="mb-7 mt-2 text-sm leading-6 text-[#65798a]">Sign in to continue to your Lotus portal.</p>
           <PageForm submit="Log in" fields={[
             { name: 'email', label: 'Email', type: 'email', required: true },
             { name: 'password', label: 'Password', type: 'password', required: true },
@@ -55,10 +61,13 @@ export default function Login() {
             const r = await api('/auth/login', 'POST', { email: v.email, password: v.password });
             if (r.mfaToken) setMfa({ token: r.mfaToken, mode: r.mfa }); else finish(r);
           }} />
-          <p className="mt-5"><Link className="text-link underline" href="/forgot">Forgot your password?</Link></p>
-          <p className="mt-3 text-muted">New creator? <Link className="text-link underline" href="/register">Join here</Link>.</p>
+          <p className="mt-5 text-sm"><Link className="font-semibold text-[#147f80] hover:underline" href="/forgot">Forgot your password?</Link></p>
+          <div className="mt-8 border-t border-[#e5eeec] pt-6 text-sm text-[#65798a]">New creator? <Link className="font-semibold text-[#147f80] hover:underline" href="/register">Create an account</Link></div>
         </>
       )}
+      </div></div>
+      </div>
+      <p className="text-center text-xs text-[#758a89]">Lotus Electronics Supermarket · Creator Network</p>
     </main>
   );
 }
