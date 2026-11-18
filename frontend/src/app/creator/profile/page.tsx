@@ -108,16 +108,16 @@ export default function Profile() {
         </div>}
       </Loaded>
       {terms && <TermsModal onClose={() => setTerms(false)} onAccepted={async () => { setTerms(false); toast('Terms accepted'); await me.reload(); }} />}
-      {edit === 'pan' && <FormModal title={d?.pan_last4 ? 'Edit PAN details' : 'Add PAN details'} intro="Enter the name exactly as it appears on your PAN. Your details are stored securely." submit="Save PAN" onClose={() => setEdit(null)} fields={[
-        { name: 'pan', label: 'PAN', required: true, placeholder: 'ABCDE1234F' },
-        { name: 'legalName', label: 'Name as on PAN', required: true },
-        { name: 'gstin', label: 'GSTIN (if you have one)' },
+      {edit === 'pan' && <FormModal title={d?.pan_last4 ? 'Edit PAN details' : 'Add PAN details'} intro={d?.pan_last4 ? `Your saved PAN ends in ${d.pan_last4}. For security, enter the full PAN again to save changes.` : 'Enter the name exactly as it appears on your PAN. Your details are stored securely.'} submit="Save PAN" onClose={() => setEdit(null)} fields={[
+        { name: 'pan', label: 'PAN', required: true, hint: 'Enter your 10-character PAN.' },
+        { name: 'legalName', label: 'Name as on PAN', required: true, initial: d?.pan_legal_name ?? '' },
+        { name: 'gstin', label: 'GSTIN (if you have one)', initial: d?.gstin ?? '' },
       ]} onSubmit={async (v) => { await api('/influencer/tax', 'PUT', { pan: v.pan, legalName: v.legalName, gstin: v.gstin || undefined }); toast('PAN saved'); await me.reload(); }} />}
-      {edit === 'pay' && <FormModal title={d?.payout_account ? 'Edit bank details' : 'Add bank details'} intro="Changes pause payments until an admin confirms the account. Enter your login password to confirm." submit="Save bank details" onClose={() => setEdit(null)} fields={[
-        { name: 'accountHolder', label: 'Account holder name', required: true, hint: 'Exactly as your bank has it.' },
+      {edit === 'pay' && <FormModal title={d?.payout_account ? 'Edit bank details' : 'Add bank details'} intro={d?.payout_account ? `Saved account: ${d.payout_account}. For security, enter the full account number again. Changes pause payments until an admin confirms the account.` : 'Changes pause payments until an admin confirms the account. Enter your login password to confirm.'} submit="Save bank details" onClose={() => setEdit(null)} fields={[
+        { name: 'accountHolder', label: 'Account holder name', required: true, initial: d?.payout_account_holder ?? '', hint: 'Exactly as your bank has it.' },
         { name: 'accountNumber', label: 'Account number', required: true, type: 'password' },
         { name: 'confirm', label: 'Enter account number again', required: true, type: 'password' },
-        { name: 'ifsc', label: 'IFSC', required: true, placeholder: 'HDFC0001234' },
+        { name: 'ifsc', label: 'IFSC', required: true, initial: d?.payout_ifsc ?? '' },
         { name: 'currentPassword', label: 'Your login password', type: 'password', required: true },
       ]} onSubmit={async (v) => { if (v.accountNumber.trim() !== v.confirm.trim()) throw new Error('The two account numbers do not match.'); await api('/influencer/payout-account', 'PUT', { currentPassword: v.currentPassword, accountHolder: v.accountHolder, accountNumber: v.accountNumber.trim(), ifsc: v.ifsc }); toast('Bank details saved'); await me.reload(); }} />}
       {edit === 'yt' && !ytProof && <FormModal title={yt ? 'Change YouTube account' : 'Connect YouTube'} intro="Enter your channel handle. You will verify ownership with a short code." submit="Continue" onClose={() => setEdit(null)} fields={[{ name: 'handle', label: 'Your channel handle', required: true, placeholder: '@yourchannel' }]} onSubmit={async (v) => { const proof = await api('/influencer/social/youtube/start', 'POST', { handle: v.handle }); setYtProof(proof); }} />}

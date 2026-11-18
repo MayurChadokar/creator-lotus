@@ -3,7 +3,7 @@ import ExcelJS from 'exceljs';
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
-import { AppError, audit, conflict, decrypt, istDate, notFound, pool, taxYear, withTx, type Db } from '../core.js';
+import { AppError, audit, conflict, decrypt, istDate, notFound, notify, pool, taxYear, withTx, type Db } from '../core.js';
 import { changeBudget, setCampaignStatus } from '../engines/budget.js';
 import { approveBatch, bankPaymentLines, csvCell, batchCsv, generateBatch, recordBankFailed, recordBankPaid, releaseBatch, activeRule, ruleTerms } from '../engines/payouts.js';
 import { computeTds } from '../engines/pricing.js';
@@ -357,7 +357,9 @@ export function adminRoutes() {
       }
       await c.query(`UPDATE influencer_profiles SET vetting_status=$2 WHERE user_id=$1`, [p.user_id, b.approve ? 'APPROVED' : 'REJECTED']);
       await audit(c, req.user.id, b.approve ? 'VETTING_APPROVED' : 'VETTING_REJECTED', 'influencer', p.user_id, b.reason);
+      if (b.approve) await notify(c, p.user_id, 'creator_approved');
     });
+    if (b.approve) await flushOutbox().catch(() => console.error('Email queue could not be processed after creator approval'));
     res.json({ ok: true });
   });
   r.post('/influencers/:id/blacklist', async (req, res) => {

@@ -120,9 +120,11 @@ export function authRoutes() {
         `INSERT INTO influencer_profiles (user_id, tier_id, city, latitude, longitude, home_store_id, privacy_accepted_at)
          VALUES ($1, (SELECT id FROM tiers ORDER BY rank LIMIT 1), $2,$3,$4,$5, now())`,
         [u.id, b.city ?? null, b.latitude ?? null, b.longitude ?? null, b.homeStoreId]);
+      await notify(c, u.id, 'creator_registered');
       return u.id as string;
     });
     await record(ipKey(req, 'signup'));
+    await flushOutbox().catch(() => console.error('Email queue could not be processed after registration'));
     res.status(201).json({ token: signSession({ id, role: 'INFLUENCER', storeId: null }) });
   });
 
@@ -148,8 +150,8 @@ export function authRoutes() {
       const { rows: [u] } = await pool.query(`SELECT id FROM users WHERE email=$1 AND is_active`, [email]);
       if (u) {
         const link = await createResetLink(u.id, null, 1);
-        await notify(pool, u.id, 'password_reset', { link });
-        await flushOutbox();
+        await notify(pool, u.id, 'password_reset', { linkEnc: encrypt(link) });
+        await flushOutbox().catch(() => console.error('Email queue could not be processed after password reset request'));
       }
     }
     res.json({ ok: true });

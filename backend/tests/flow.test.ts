@@ -542,6 +542,10 @@ test('HTTP: roles and store boundaries are enforced; PAN never comes back', asyn
   assert.ok(!raw.pan_encrypted.includes('PQRST6789K'));
   const me = await request(app).get('/influencer/me').set('authorization', `Bearer ${tok(creator, 'INFLUENCER')}`).expect(200);
   assert.ok(!JSON.stringify(me.body).includes('PQRST'));
+  assert.equal(me.body.pan_legal_name, 'Test Creator');
+  assert.equal(me.body.payout_account_holder, 'Test');
+  assert.equal(me.body.payout_ifsc, 'HDFC0001234');
+  assert.ok(!JSON.stringify(me.body).includes('123456789012345678'));
   const nearby = await request(app).get(`/admin/stores/${store}/nearby-creators?km=5`).set('authorization', `Bearer ${tok(admin, 'ADMIN')}`).expect(200);
   assert.ok(nearby.body.some((x: any) => x.user_id === creator));
     await request(app).post('/internal/run-jobs').set('x-jobs-secret', 'wrong').expect(401);

@@ -23,7 +23,8 @@ export function influencerRoutes() {
   r.get('/me', async (req, res) => {
     const { rows: [p] } = await pool.query(
       `SELECT u.full_name, u.email, u.phone, p.vetting_status, p.home_store_id, p.is_blacklisted, p.city, t.name tier,
-              tx.pan_last4, tx.pan_status, tx.gstin, pa.masked_display payout_account, pa.verified_at IS NOT NULL bank_confirmed,
+              tx.pan_last4, tx.pan_status, tx.legal_name pan_legal_name, tx.gstin,
+              pa.masked_display payout_account, pa.account_holder payout_account_holder, pa.ifsc payout_ifsc, pa.verified_at IS NOT NULL bank_confirmed,
               (SELECT json_agg(json_build_object('platform',s.platform,'handle',s.handle,'followers',s.followers))
                  FROM social_accounts s WHERE s.influencer_id=p.user_id) social,
               EXISTS (SELECT 1 FROM legal_acceptance_logs l JOIN legal_documents d ON d.id=l.document_id
