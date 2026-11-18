@@ -479,20 +479,20 @@ export function adminRoutes() {
   r.post('/influencers/:id/bank/confirm', async (req, res) => {
     const b = z.object({ viewedVersion: z.string() }).parse(req.body);
     // Confirms exactly what the admin looked at, not anything changed since.
-    const u = await pool.query(`UPDATE payout_accounts SET verified_at=now(), verified_by=$2 WHERE influencer_id=$1 AND updated_at::text=$3`, [req.params.id, req.user.id, b.viewedVersion]);
+    const u = await pool.query(`UPDATE payout_accounts SET verified_at=now(), verified_by=$2 WHERE influencer_id=$1 AND updated_at=$3`, [req.params.id, req.user.id, b.viewedVersion]);
     if (!u.rowCount) throw conflict('CHANGED', 'These details changed while you were looking. Please open them again.');
     await audit(pool, req.user.id, 'BANK_DETAILS_CONFIRMED', 'influencer', req.params.id!);
     res.json({ ok: true });
   });
   r.get('/influencers/:id/pan', async (req, res) => {
-    const { rows: [t] } = await pool.query(`SELECT pan_encrypted, legal_name, pan_status, updated_at::text AS version FROM tax_records WHERE influencer_id=$1`, [req.params.id]);
+    const { rows: [t] } = await pool.query(`SELECT pan_encrypted, legal_name, pan_status, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS version FROM tax_records WHERE influencer_id=$1`, [req.params.id]);
     if (!t) throw notFound('PAN');
     await audit(pool, req.user.id, 'PAN_VIEWED', 'influencer', req.params.id!);
     res.json({ pan: decrypt(t.pan_encrypted), legalName: t.legal_name, status: t.pan_status, version: t.version });
   });
   r.post('/influencers/:id/pan/confirm', async (req, res) => {
     const b = z.object({ viewedVersion: z.string() }).parse(req.body);
-    const u = await pool.query(`UPDATE tax_records SET pan_status='VERIFIED' WHERE influencer_id=$1 AND updated_at::text=$2`, [req.params.id, b.viewedVersion]);
+    const u = await pool.query(`UPDATE tax_records SET pan_status='VERIFIED' WHERE influencer_id=$1 AND updated_at=$2`, [req.params.id, b.viewedVersion]);
     if (!u.rowCount) throw conflict('CHANGED', 'This PAN changed while you were looking. Please open it again.');
     await audit(pool, req.user.id, 'PAN_CONFIRMED', 'influencer', req.params.id!);
     res.json({ ok: true });
@@ -500,13 +500,13 @@ export function adminRoutes() {
   // Invalid or inoperative PAN: payment can go ahead, with TDS at the higher rate (20%).
   r.post('/influencers/:id/pan/invalid', async (req, res) => {
     const b = z.object({ viewedVersion: z.string() }).parse(req.body);
-    const u = await pool.query(`UPDATE tax_records SET pan_status='INOPERATIVE' WHERE influencer_id=$1 AND updated_at::text=$2`, [req.params.id, b.viewedVersion]);
+    const u = await pool.query(`UPDATE tax_records SET pan_status='INOPERATIVE' WHERE influencer_id=$1 AND updated_at=$2`, [req.params.id, b.viewedVersion]);
     if (!u.rowCount) throw conflict('CHANGED', 'This PAN changed while you were looking. Please open it again.');
     await audit(pool, req.user.id, 'PAN_MARKED_INVALID', 'influencer', req.params.id!);
     res.json({ ok: true });
   });
   r.get('/influencers/:id/bank', async (req, res) => {
-    const { rows: [a] } = await pool.query(`SELECT account_holder, account_number_enc, ifsc, verified_at, updated_at::text AS version FROM payout_accounts WHERE influencer_id=$1`, [req.params.id]);
+    const { rows: [a] } = await pool.query(`SELECT account_holder, account_number_enc, ifsc, verified_at, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS version FROM payout_accounts WHERE influencer_id=$1`, [req.params.id]);
     if (!a) throw notFound('Bank details');
     await audit(pool, req.user.id, 'BANK_DETAILS_VIEWED', 'influencer', req.params.id!);
     res.json({ accountHolder: a.account_holder, accountNumber: decrypt(a.account_number_enc), ifsc: a.ifsc, confirmed: !!a.verified_at, version: a.version });

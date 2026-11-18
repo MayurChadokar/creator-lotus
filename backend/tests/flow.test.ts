@@ -557,6 +557,21 @@ test('HTTP: roles and store boundaries are enforced; PAN never comes back', asyn
   assert.ok(nearby.body.some((x: any) => x.user_id === creator));
     await request(app).post('/internal/run-jobs').set('x-jobs-secret', 'wrong').expect(401);
 });
+test('Admin confirms only the PAN and bank details that were viewed', async () => {
+  const app = buildApp();
+  const creator = await makeCreator(store);
+  const token = `Bearer ${jwt.sign({ id: admin, role: 'ADMIN', storeId: null }, process.env.JWT_SECRET!)}`;
+  const pan = await request(app).get(`/admin/influencers/${creator}/pan`).set('authorization', token).expect(200);
+  await request(app).post(`/admin/influencers/${creator}/pan/confirm`).set('authorization', token)
+    .send({ viewedVersion: pan.body.version }).expect(200);
+  assert.equal((await q1(`SELECT pan_status FROM tax_records WHERE influencer_id=$1`, [creator])).pan_status, 'VERIFIED');
+  await pool.query(`UPDATE tax_records SET updated_at=DATE_ADD(updated_at, INTERVAL 1 SECOND) WHERE influencer_id=$1`, [creator]);
+  await request(app).post(`/admin/influencers/${creator}/pan/invalid`).set('authorization', token)
+    .send({ viewedVersion: pan.body.version }).expect(409);
+  const bank = await request(app).get(`/admin/influencers/${creator}/bank`).set('authorization', token).expect(200);
+  await request(app).post(`/admin/influencers/${creator}/bank/confirm`).set('authorization', token)
+    .send({ viewedVersion: bank.body.version }).expect(200);
+});
 test('HTTP: register, then log in with the real password flow', async () => {
   const app = buildApp();
   const email = `new${Date.now()}@test.in`;
