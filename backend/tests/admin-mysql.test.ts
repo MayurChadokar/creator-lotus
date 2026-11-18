@@ -45,6 +45,14 @@ test('campaign creation and posting updates bind JSON arrays as single MySQL val
     const update = calls.find((c) => c.sql.startsWith('UPDATE campaigns SET posting_hashtags'))!;
     assert.equal(update.values[1], '["#Lotus"]');
     assert.equal(update.values[2], '["@lotus"]');
+    for (const value of [0, 1]) {
+      await request(app).put(`/admin/campaigns/${storeId}/posting`).set('authorization', authorization)
+        .send({ requiredDisclosure: value }).expect(200);
+      const lastUpdate = calls.filter((c) => c.sql.startsWith('UPDATE campaigns SET posting_hashtags')).at(-1)!;
+      assert.equal(lastUpdate.values[5], Boolean(value));
+    }
+    await request(app).put(`/admin/campaigns/${storeId}/posting`).set('authorization', authorization)
+      .send({ requiredDisclosure: 'false' }).expect(400);
   } finally {
     pool.query = originalQuery;
     pool.connect = originalConnect;

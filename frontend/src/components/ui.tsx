@@ -224,7 +224,8 @@ export function Fields({ fields, values, set }: { fields: Field[]; values: Recor
   );
 }
 
-const initialValues = (fields: Field[]) => Object.fromEntries(fields.map((f) => [f.name, f.initial ?? (f.type === 'checks' ? [] : f.type === 'checkbox' ? false : '')]));
+const initialValues = (fields: Field[]) => Object.fromEntries(fields.map((f) => [f.name,
+  f.type === 'checkbox' ? Boolean(f.initial) : f.initial ?? (f.type === 'checks' ? [] : '')]));
 
 /** A dialog with a form. Stays open and shows the problem if saving fails. */
 export function FormModal({ title, intro, fields, submit, danger, onSubmit, onClose, wide, firstTab = 'Details' }: {

@@ -96,6 +96,6 @@ export async function changeBudget(campaignId: string, budgetPaise: number, quot
 export async function expireCampaigns(): Promise<number> {
   const r = await pool.query(
     `UPDATE campaigns SET status='EXPIRED', lock_reason=NULL
-      WHERE status IN ('OPEN','PAUSED','LOCKED','DRAFT') AND expires_at <= now() RETURNING id`);
+      WHERE status IN ('OPEN','PAUSED','LOCKED','DRAFT') AND expires_at <= UTC_TIMESTAMP() RETURNING id`);
   return r.rowCount ?? 0;
 }

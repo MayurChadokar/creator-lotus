@@ -15,11 +15,21 @@ export const live = (views: number, likes: number | null, comments: number | nul
 });
 
 export async function resetDb() {
-  const { rows } = await pool.query<{ table_name: string }>(
-    `SELECT table_name FROM information_schema.tables WHERE table_schema=DATABASE()`);
-  await pool.query('SET FOREIGN_KEY_CHECKS=0');
-  for (const { table_name } of rows) await pool.query(`DROP TABLE IF EXISTS \`${table_name}\``);
-  await pool.query('SET FOREIGN_KEY_CHECKS=1');
+  if (process.env.ALLOW_DESTRUCTIVE_TESTS !== '1') throw new Error('Refusing to reset database: set ALLOW_DESTRUCTIVE_TESTS=1 only for an isolated test database.');
+  const { rows: [database] } = await pool.query<{ name: string }>(`SELECT DATABASE() AS name`);
+  if (!database?.name || !/(^|_)test($|_)/i.test(database.name)) throw new Error('Refusing to reset database: the database name must contain test as a separate word.');
+  const connection = await pool.connect();
+  try {
+    const [rows] = await connection.query(`SELECT table_name FROM information_schema.tables WHERE table_schema=DATABASE()`);
+    await connection.query('SET FOREIGN_KEY_CHECKS=0');
+    try {
+      for (const { table_name } of rows as { table_name: string }[]) await connection.query(`DROP TABLE IF EXISTS \`${table_name.replaceAll('`', '``')}\``);
+    } finally {
+      await connection.query('SET FOREIGN_KEY_CHECKS=1');
+    }
+  } finally {
+    connection.release();
+  }
   await setupDatabase();
 }
 let seq = 0;

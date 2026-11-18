@@ -94,7 +94,7 @@ export function publicRoutes() {
       `SELECT k.id, k.title, k.brief, k.expires_at, pc.name category,
               (SELECT string_agg(DISTINCT s.city, ', ') FROM campaign_stores cs JOIN stores s ON s.id=cs.store_id WHERE cs.campaign_id=k.id) cities
          FROM campaigns k JOIN product_categories pc ON pc.id=k.category_id
-        WHERE k.status='OPEN' AND k.starts_at<=now() AND k.expires_at>now() ORDER BY k.expires_at LIMIT 12`);
+        WHERE k.status='OPEN' AND k.starts_at<=UTC_TIMESTAMP() AND k.expires_at>UTC_TIMESTAMP() ORDER BY k.expires_at`);
     res.json(rows);
   });
   return r;
@@ -133,7 +133,8 @@ export function authRoutes() {
     const { rows: [u] } = await pool.query(`SELECT password_hash FROM users WHERE id=$1`, [req.user.id]);
     if (!(await bcrypt.compare(b.current, u.password_hash))) throw new AppError(400, 'BAD_PASSWORD', 'Your current password is not right');
     // Logs out every other device, in case the old password was stolen.
-    const { rows: [n] } = await pool.query(`UPDATE users SET password_hash=$2, must_change_password=FALSE, token_version=token_version+1 WHERE id=$1 RETURNING *`, [req.user.id, await bcrypt.hash(b.next, 12)]);
+    await pool.query(`UPDATE users SET password_hash=$2, must_change_password=FALSE, token_version=token_version+1 WHERE id=$1`, [req.user.id, await bcrypt.hash(b.next, 12)]);
+    const { rows: [n] } = await pool.query(`SELECT * FROM users WHERE id=$1`, [req.user.id]);
     await audit(pool, req.user.id, 'PASSWORD_CHANGED', 'user', req.user.id);
     await notify(pool, req.user.id, 'password_changed');
     await flushOutbox();

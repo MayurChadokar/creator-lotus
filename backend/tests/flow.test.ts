@@ -318,6 +318,19 @@ test('TDS 194R: 10% once yearly benefits pass Rs 20,000; taken from pay, restore
   assert.match(report.text, /194R,10\.00,Yes,10000\.00,2500\.00/);
   await clearQueue();
 });
+test('Public and creator listings include all active open campaigns', async () => {
+  const app = buildApp();
+  const creator = await makeCreator(store);
+  const ids = [] as string[];
+  for (let i = 0; i < 13; i++) ids.push(await makeCampaign(store, admin));
+  const publicCampaigns = (await request(app).get('/public/campaigns').expect(200)).body;
+  const token = `Bearer ${jwt.sign({ id: creator, role: 'INFLUENCER', storeId: null }, process.env.JWT_SECRET!)}`;
+  const creatorCampaigns = (await request(app).get('/influencer/campaigns').set('authorization', token).expect(200)).body;
+  for (const id of ids) {
+    assert.ok(publicCampaigns.some((campaign: any) => campaign.id === id));
+    assert.ok(creatorCampaigns.some((campaign: any) => campaign.id === id));
+  }
+});
 test('Admin creates campaigns with empty and populated posting specifications', async () => {
   const app = buildApp();
   const authorization = `Bearer ${jwt.sign({ id: admin, role: 'ADMIN', storeId: null }, process.env.JWT_SECRET!)}`;

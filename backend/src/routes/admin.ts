@@ -12,6 +12,8 @@ import { createResetLink, requireRole } from './auth.js';
 import { sharedRoutes, visitRoutes } from './shared.js';
 
 const money = z.number().int().min(0);
+// MySQL BOOLEAN columns are returned as 0/1; older clients may send these values back.
+const mysqlBoolean = z.preprocess((value) => value === 0 ? false : value === 1 ? true : value, z.boolean());
 
 export function adminRoutes() {
   const r = Router();
@@ -133,7 +135,7 @@ export function adminRoutes() {
     const b = z.object({
       title: z.string().min(3).max(150), brief: z.string().min(10).max(5000), categoryId: z.string().uuid(), storeIds: z.array(z.string().uuid()).min(1),
       startsAt: z.string().datetime(), expiresAt: z.string().datetime(), budgetPaise: z.number().int().positive(), submissionQuota: z.number().int().positive(),
-      ...targets, requiredDisclosure: z.boolean().default(true), tierRates,
+      ...targets, requiredDisclosure: mysqlBoolean.default(true), tierRates,
       ...postingSpecs,
     }).parse(req.body);
     const id = await withTx(async (c) => {
@@ -151,7 +153,7 @@ export function adminRoutes() {
   });
   // Changes apply to posts not yet finally checked.
   r.put('/campaigns/:id/posting', async (req, res) => {
-    const b = z.object({ ...postingSpecs, requiredDisclosure: z.boolean().optional() }).parse(req.body);
+    const b = z.object({ ...postingSpecs, requiredDisclosure: mysqlBoolean.optional() }).parse(req.body);
     const u = await pool.query(`UPDATE campaigns SET posting_hashtags=$2, posting_mentions=$3, posting_guidelines=$4, collab_account=$5, required_disclosure=COALESCE($6, required_disclosure) WHERE id=$1`,
       [req.params.id, JSON.stringify(b.postingHashtags), JSON.stringify(b.postingMentions), b.postingGuidelines?.trim() || null, b.collabAccount ?? null, b.requiredDisclosure ?? null]);
     if (!u.rowCount) throw notFound('Campaign');

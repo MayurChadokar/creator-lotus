@@ -74,15 +74,25 @@ export function influencerRoutes() {
     const { rows: [me] } = await pool.query(`SELECT password_hash FROM users WHERE id=$1`, [req.user.id]);
     if (!(await bcrypt.compare(b.currentPassword, me.password_hash))) throw new AppError(400, 'BAD_PASSWORD', 'Your password is not right');
     const masked = `A/c ending ${b.accountNumber.slice(-4)}`;
-    await pool.query(
-      `INSERT INTO payout_accounts (influencer_id, account_type, account_holder, account_number_enc, ifsc, masked_display, account_lookup_hash)
-       VALUES ($1,'BANK',$2,$3,$4,$5,$6)
-       ON CONFLICT (influencer_id) DO UPDATE SET account_type='BANK', account_holder=EXCLUDED.account_holder,
-         account_number_enc=EXCLUDED.account_number_enc, ifsc=EXCLUDED.ifsc, upi_id=NULL, masked_display=EXCLUDED.masked_display,
-         account_lookup_hash=EXCLUDED.account_lookup_hash, verified_at=NULL, verified_by=NULL, updated_at=now()`,
-      [req.user.id, b.accountHolder, encrypt(b.accountNumber), b.ifsc, masked, lookupHash(`bank:${b.ifsc.slice(0, 4)}:${b.accountNumber.replace(/^0+/, '')}`)]);
-    await audit(pool, req.user.id, 'BANK_DETAILS_SAVED', 'influencer', req.user.id);
-    await notify(pool, req.user.id, 'bank_details_changed'); // warns the real owner if an account was taken over
+    try {
+      await withTx(async (c) => {
+        await c.query(`SELECT id FROM users WHERE id=$1 FOR UPDATE`, [req.user.id]);
+        const existing = await c.query(`SELECT influencer_id FROM payout_accounts WHERE influencer_id=$1`, [req.user.id]);
+        const values = [req.user.id, b.accountHolder, encrypt(b.accountNumber), b.ifsc, masked, lookupHash(`bank:${b.ifsc.slice(0, 4)}:${b.accountNumber.replace(/^0+/, '')}`)];
+        if (existing.rowCount) {
+          await c.query(`UPDATE payout_accounts SET account_type='BANK', account_holder=$2, account_number_enc=$3, ifsc=$4,
+            upi_id=NULL, masked_display=$5, account_lookup_hash=$6, verified_at=NULL, verified_by=NULL, updated_at=now() WHERE influencer_id=$1`, values);
+        } else {
+          await c.query(`INSERT INTO payout_accounts (influencer_id, account_type, account_holder, account_number_enc, ifsc, masked_display, account_lookup_hash)
+            VALUES ($1,'BANK',$2,$3,$4,$5,$6)`, values);
+        }
+        await audit(c, req.user.id, 'BANK_DETAILS_SAVED', 'influencer', req.user.id);
+        await notify(c, req.user.id, 'bank_details_changed');
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'ER_DUP_ENTRY') throw conflict('BANK_IN_USE', 'This bank account is already used by another creator. Please contact support.');
+      throw error;
+    }
     await flushOutbox();
     res.json({ maskedDisplay: masked });
   });
@@ -178,7 +188,7 @@ export function influencerRoutes() {
               (SELECT json_agg(json_build_object('id',s.id,'name',s.name,'city',s.city)) FROM campaign_stores cs JOIN stores s ON s.id=cs.store_id WHERE cs.campaign_id=k.id) stores,
               (SELECT x.status FROM submissions x WHERE x.campaign_id=k.id AND x.influencer_id=$1 AND x.status NOT IN ('NOT_LIVE','WITHDRAWN','REJECTED') LIMIT 1) my_entry
          FROM campaigns k JOIN product_categories pc ON pc.id=k.category_id
-        WHERE k.status='OPEN' AND k.starts_at<=now() AND k.expires_at>now() ORDER BY k.expires_at`, [req.user.id]);
+        WHERE k.status='OPEN' AND k.starts_at<=UTC_TIMESTAMP() AND k.expires_at>UTC_TIMESTAMP() ORDER BY k.expires_at`, [req.user.id]);
     // Each creator sees the pay that would apply to them in each campaign.
     for (const k of rows) {
       try { const t = await rateTermsFor(pool, req.user.id, k.category_id, k.id); k.my_pay = { ...t, maxPaise: maxPay(t) }; } catch { k.my_pay = null; }

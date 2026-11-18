@@ -69,7 +69,7 @@ export async function runJobs() {
   const { rows: stuck } = await pool.query(`SELECT id FROM payment_batches WHERE status='RELEASING'`);
   await each(stuck, (b) => releaseBatch(b.id, null, true), errors);
   // One sheet per day, however often this job runs
-  const { rows: [{ batch_exists }] } = await pool.query(`SELECT EXISTS (SELECT 1 FROM payment_batches WHERE created_at >= UTC_TIMESTAMP() - INTERVAL 330 MINUTE + INTERVAL 330 MINUTE AND DATE(CONVERT_TZ(created_at,'+00:00','+05:30'))=DATE(CONVERT_TZ(UTC_TIMESTAMP(),'+00:00','+05:30'))) AS batch_exists`);
+  const { rows: [{ batch_exists }] } = await pool.query(`SELECT EXISTS (SELECT 1 FROM payment_batches WHERE DATE(CONVERT_TZ(created_at,'+00:00','+05:30'))=DATE(CONVERT_TZ(UTC_TIMESTAMP(),'+00:00','+05:30'))) AS batch_exists`);
   const batch = batch_exists ? null : await generateBatch(null);
   const emails = await flushOutbox(200);
   return { emails, expired, firstChecks: pending.length, dailyChecks: measuring.length, finalized: due.length, tiersChanged, batch, errors };
