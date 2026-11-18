@@ -38,18 +38,30 @@ export function influencerRoutes() {
   r.put('/tax', async (req, res) => {
     const b = z.object({
       pan: z.string().transform((s) => s.trim().toUpperCase()).refine((s) => PAN_RE.test(s), 'Enter a valid 10-character PAN'),
-      legalName: z.string().min(2).max(120),
+      legalName: z.string().trim().min(2, 'Enter the name shown on your PAN').max(120),
       gstin: z.string().transform((s) => s.trim().toUpperCase()).refine((s) => GSTIN_RE.test(s), 'Enter a valid GSTIN').optional(),
     }).parse(req.body);
-    await withTx(async (c) => {
-      await c.query(
-        `INSERT INTO tax_records (influencer_id, pan_encrypted, pan_lookup_hash, pan_last4, legal_name, gstin)
-         VALUES ($1,$2,$3,$4,$5,$6)
-         ON CONFLICT (influencer_id) DO UPDATE SET pan_encrypted=EXCLUDED.pan_encrypted, pan_lookup_hash=EXCLUDED.pan_lookup_hash,
-           pan_last4=EXCLUDED.pan_last4, legal_name=EXCLUDED.legal_name, gstin=EXCLUDED.gstin, pan_status='UNVERIFIED', updated_at=now()`,
-        [req.user.id, encrypt(b.pan), lookupHash(b.pan), b.pan.slice(-4), b.legalName, b.gstin ?? null]);
-      await audit(c, req.user.id, 'TAX_RECORD_SAVED', 'influencer', req.user.id);
-    });
+    try {
+      await withTx(async (c) => {
+        // Serialize saves for this creator; a duplicate PAN must never update another creator's row.
+        await c.query(`SELECT id FROM users WHERE id=$1 FOR UPDATE`, [req.user.id]);
+        const existing = await c.query(`SELECT influencer_id FROM tax_records WHERE influencer_id=$1`, [req.user.id]);
+        const values = [req.user.id, encrypt(b.pan), lookupHash(b.pan), b.pan.slice(-4), b.legalName, b.gstin ?? null];
+        if (existing.rowCount) {
+          await c.query(`UPDATE tax_records SET pan_encrypted=$2, pan_lookup_hash=$3, pan_last4=$4,
+            legal_name=$5, gstin=$6, pan_status='UNVERIFIED', updated_at=now() WHERE influencer_id=$1`, values);
+        } else {
+          await c.query(`INSERT INTO tax_records (influencer_id, pan_encrypted, pan_lookup_hash, pan_last4, legal_name, gstin)
+            VALUES ($1,$2,$3,$4,$5,$6)`, values);
+        }
+        await audit(c, req.user.id, 'TAX_RECORD_SAVED', 'influencer', req.user.id);
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'ER_DUP_ENTRY') {
+        throw conflict('PAN_IN_USE', 'This PAN is already linked to another creator account. Please contact support.');
+      }
+      throw error;
+    }
     res.json({ panLast4: b.pan.slice(-4) });
   });
 

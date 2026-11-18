@@ -543,6 +543,13 @@ test('HTTP: roles and store boundaries are enforced; PAN never comes back', asyn
   const me = await request(app).get('/influencer/me').set('authorization', `Bearer ${tok(creator, 'INFLUENCER')}`).expect(200);
   assert.ok(!JSON.stringify(me.body).includes('PQRST'));
   assert.equal(me.body.pan_legal_name, 'Test Creator');
+  const otherCreator = await makeCreator(store);
+  const duplicate = await request(app).put('/influencer/tax').set('authorization', `Bearer ${tok(otherCreator, 'INFLUENCER')}`)
+    .send({ pan: 'PQRST6789K', legalName: 'Other Creator' }).expect(409);
+  assert.equal(duplicate.body.code, 'PAN_IN_USE');
+  const unchanged = await q1(`SELECT legal_name, pan_last4 FROM tax_records WHERE influencer_id=$1`, [creator]);
+  assert.equal(unchanged.legal_name, 'Test Creator');
+  assert.equal(unchanged.pan_last4, '789K');
   assert.equal(me.body.payout_account_holder, 'Test');
   assert.equal(me.body.payout_ifsc, 'HDFC0001234');
   assert.ok(!JSON.stringify(me.body).includes('123456789012345678'));
