@@ -43,6 +43,12 @@ export async function alertAdmins(db: Db, actorId: string | null, what: string, 
 export async function flushOutbox(limit = 25): Promise<number> {
   const provider = (process.env.EMAIL_PROVIDER || process.env.TICKET_EMAIL_PROVIDER || (process.env.BREVO_API_KEY ? 'brevo' : '')).toLowerCase();
   if (provider === 'mailgun' ? !process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN || !process.env.MAILGUN_FROM : provider !== 'brevo' || !process.env.BREVO_API_KEY) return 0;
+  // Compare expiry using the database clock. MySQL DATETIME values have no timezone;
+  // comparing a parsed value with Date.now() can make a fresh message appear hours old.
+  await pool.query(
+    `UPDATE notifications_outbox SET status='FAILED'
+      WHERE status='QUEUED' AND template='password_reset'
+        AND created_at <= DATE_SUB(NOW(), INTERVAL 1 HOUR)`);
   const { rows: queued } = await pool.query(
     `SELECT n.id, n.template, n.payload, n.created_at, u.email, u.full_name, u.is_active FROM notifications_outbox n JOIN users u ON u.id=n.user_id
       WHERE n.status='QUEUED' ORDER BY n.created_at LIMIT $1`, [limit]);
@@ -51,7 +57,6 @@ export async function flushOutbox(limit = 25): Promise<number> {
     const build = TEMPLATES[m.template];
     if (!build || !m.is_active) { await pool.query(`UPDATE notifications_outbox SET status='FAILED' WHERE id=$1`, [m.id]); continue; }
     try {
-      if (m.template === 'password_reset' && Date.now() - new Date(m.created_at).getTime() >= 3600000) { await pool.query(`UPDATE notifications_outbox SET status='FAILED' WHERE id=$1`, [m.id]); continue; }
       const payload = m.template === 'password_reset' && m.payload?.linkEnc ? { ...m.payload, link: decrypt(m.payload.linkEnc) } : m.payload;
       const { subject, text } = build(payload);
       const footer = site() ? `\n\n${site()}` : '';
